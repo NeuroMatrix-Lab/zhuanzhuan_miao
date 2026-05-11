@@ -22,14 +22,20 @@ class ConversionService {
       int? width,
       int? height,
       Function(double)? onProgress,
+      String? customOutputPath,
     }
   ) async {
     try {
       await _logService.info('Starting conversion: ${inputFile.path} to $outputFormat');
       
-      final outputDir = await _fileService.getOutputDirectory();
-      final outputFileName = _fileService.getOutputPath(inputFile.path, outputFormat);
-      final outputPath = '${outputDir.path}${Platform.pathSeparator}$outputFileName';
+      final String outputPath;
+      if (customOutputPath != null) {
+        outputPath = customOutputPath;
+      } else {
+        final outputDir = await _fileService.getOutputDirectory();
+        final outputFileName = _fileService.getOutputPath(inputFile.path, outputFormat);
+        outputPath = '${outputDir.path}${Platform.pathSeparator}$outputFileName';
+      }
 
       String codecVideo = videoCodec ?? 
         (ConverterUtils.isVideoFile(inputFile.path) 

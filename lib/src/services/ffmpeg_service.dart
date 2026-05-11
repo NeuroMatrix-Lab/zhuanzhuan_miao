@@ -17,19 +17,14 @@ class FfmpegService {
   }
 
   Future<void> enableStatisticsCallback(void Function(dynamic) callback) async {
-    // 暂时注释掉，需要检查正确的API
-    // _flutterFFmpeg.enableStatisticsCallback(callback);
+    await _flutterFFmpeg.enableStatisticsCallback(callback);
   }
 
   Future<String> getFFmpegVersion() async {
-    // 暂时注释掉，需要检查正确的API
-    // return await _flutterFFmpeg.getFFmpegVersion();
-    return 'Unknown';
+    return await _flutterFFmpeg.getVersion();
   }
 
   Future<String> getPlatform() async {
-    // 暂时注释掉，需要检查正确的API
-    // return await _flutterFFmpeg.getPlatform();
-    return 'Unknown';
+    return await _flutterFFmpeg.getPlatform();
   }
 }
