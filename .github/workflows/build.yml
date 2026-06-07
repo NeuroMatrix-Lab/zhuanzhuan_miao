@@ -38,5 +38,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: flutter-app-windows
-          path: build/windows/x64/release/
+          path: build/windows/x64/runner/Release/
           retention-days: 7
