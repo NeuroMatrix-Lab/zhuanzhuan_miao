@@ -1,0 +1,11 @@
+D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\deps\futures_task-de8d08eb58d6a500.d: C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\lib.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\spawn.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\arc_wake.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\waker.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\waker_ref.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\future_obj.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\noop_waker.rs
+
+D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\deps\libfutures_task-de8d08eb58d6a500.rmeta: C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\lib.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\spawn.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\arc_wake.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\waker.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\waker_ref.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\future_obj.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\noop_waker.rs
+
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\lib.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\spawn.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\arc_wake.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\waker.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\waker_ref.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\future_obj.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\futures-task-0.3.32\src\noop_waker.rs:

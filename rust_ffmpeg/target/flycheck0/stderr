@@ -1,0 +1,416 @@
+   0.209632300s  INFO prepare_target{force=false package_id=rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg) target="rust_ffmpeg"}: cargo::core::compiler::fingerprint: fingerprint error for rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("rust_ffmpeg", ["lib", "cdylib"], "D:\\Project\\flutter-ffmpeg\\rust_ffmpeg\\src\\lib.rs", Edition2021) }
+   0.209723200s  INFO prepare_target{force=false package_id=rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg) target="rust_ffmpeg"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\.fingerprint\rust_ffmpeg-d0b221eea1f1765f\lib-rust_ffmpeg`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace_rs::backtrace::trace_unsynchronized::<<std::backtrace::Backtrace>::create::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/mod.rs:66:14
+   2: <std::backtrace::Backtrace>::create
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:331:13
+   3: <std::backtrace::Backtrace>::capture
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:296:9
+   4: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   5: cargo_util::paths::read
+   6: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   7: cargo::core::compiler::fingerprint::prepare_target
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::cli::main
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: <&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\core\src\ops/function.rs:287:21
+  20: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  21: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  22: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  23: std::rt::lang_start_internal::{closure#0}
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:175:24
+  24: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  25: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  26: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  27: std::rt::lang_start_internal
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:171:5
+  28: main
+  29: __tmainCRTStartup
+  30: mainCRTStartup
+  31: <unknown>
+  32: <unknown>
+   0.235949700s  INFO prepare_target{force=false package_id=flutter_rust_bridge v2.12.0 target="flutter_rust_bridge"}: cargo::core::compiler::fingerprint: fingerprint error for flutter_rust_bridge v2.12.0/Check { test: false }/TargetInner { ..: lib_target("flutter_rust_bridge", ["lib"], "C:\\Users\\music\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\flutter_rust_bridge-2.12.0\\src\\lib.rs", Edition2021) }
+   0.235983600s  INFO prepare_target{force=false package_id=flutter_rust_bridge v2.12.0 target="flutter_rust_bridge"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\.fingerprint\flutter_rust_bridge-c559ca7756d3e7fa\lib-flutter_rust_bridge`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace_rs::backtrace::trace_unsynchronized::<<std::backtrace::Backtrace>::create::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/mod.rs:66:14
+   2: <std::backtrace::Backtrace>::create
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:331:13
+   3: <std::backtrace::Backtrace>::capture
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:296:9
+   4: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   5: cargo_util::paths::read
+   6: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   7: cargo::core::compiler::fingerprint::prepare_target
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::cli::main
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: <&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\core\src\ops/function.rs:287:21
+  21: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  22: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  23: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  24: std::rt::lang_start_internal::{closure#0}
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:175:24
+  25: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  26: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  27: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  28: std::rt::lang_start_internal
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:171:5
+  29: main
+  30: __tmainCRTStartup
+  31: mainCRTStartup
+  32: <unknown>
+  33: <unknown>
+   0.243093900s  INFO prepare_target{force=false package_id=dart-sys v4.1.5 target="dart_sys"}: cargo::core::compiler::fingerprint: fingerprint error for dart-sys v4.1.5/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("dart_sys", ["lib"], "C:\\Users\\music\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\dart-sys-4.1.5\\src\\lib.rs", Edition2021) }
+   0.243124100s  INFO prepare_target{force=false package_id=dart-sys v4.1.5 target="dart_sys"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\.fingerprint\dart-sys-4f522c4d79b86012\lib-dart_sys`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace_rs::backtrace::trace_unsynchronized::<<std::backtrace::Backtrace>::create::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/mod.rs:66:14
+   2: <std::backtrace::Backtrace>::create
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:331:13
+   3: <std::backtrace::Backtrace>::capture
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:296:9
+   4: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   5: cargo_util::paths::read
+   6: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   7: cargo::core::compiler::fingerprint::prepare_target
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::cli::main
+  18: cargo::main
+  19: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  20: std::rt::lang_start::<()>::{closure#0}
+  21: <&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\core\src\ops/function.rs:287:21
+  22: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  23: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  24: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  25: std::rt::lang_start_internal::{closure#0}
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:175:24
+  26: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  27: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  28: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  29: std::rt::lang_start_internal
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:171:5
+  30: main
+  31: __tmainCRTStartup
+  32: mainCRTStartup
+  33: <unknown>
+  34: <unknown>
+   0.244033900s  INFO prepare_target{force=false package_id=dart-sys v4.1.5 target="build-script-build"}: cargo::core::compiler::fingerprint: fingerprint error for dart-sys v4.1.5/RunCustomBuild/TargetInner { ..: custom_build_target("build-script-build", "C:\\Users\\music\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\dart-sys-4.1.5\\build.rs", Edition2021) }
+   0.244051800s  INFO prepare_target{force=false package_id=dart-sys v4.1.5 target="build-script-build"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\.fingerprint\dart-sys-7c1a3d30969b7265\run-build-script-build-script-build`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace_rs::backtrace::trace_unsynchronized::<<std::backtrace::Backtrace>::create::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/mod.rs:66:14
+   2: <std::backtrace::Backtrace>::create
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:331:13
+   3: <std::backtrace::Backtrace>::capture
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:296:9
+   4: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   5: cargo_util::paths::read
+   6: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   7: cargo::core::compiler::fingerprint::prepare_target
+   8: cargo::core::compiler::custom_build::build_work
+   9: cargo::core::compiler::custom_build::prepare
+  10: cargo::core::compiler::compile
+  11: cargo::core::compiler::compile
+  12: cargo::core::compiler::compile
+  13: cargo::core::compiler::compile
+  14: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  15: cargo::ops::cargo_compile::compile_ws
+  16: cargo::ops::cargo_compile::compile_with_exec
+  17: cargo::ops::cargo_compile::compile
+  18: cargo::commands::check::exec
+  19: <cargo::cli::Exec>::exec
+  20: cargo::cli::main
+  21: cargo::main
+  22: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  23: std::rt::lang_start::<()>::{closure#0}
+  24: <&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\core\src\ops/function.rs:287:21
+  25: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  26: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  27: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  28: std::rt::lang_start_internal::{closure#0}
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:175:24
+  29: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  30: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  31: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  32: std::rt::lang_start_internal
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:171:5
+  33: main
+  34: __tmainCRTStartup
+  35: mainCRTStartup
+  36: <unknown>
+  37: <unknown>
+   0.267363700s  INFO prepare_target{force=false package_id=rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg) target="rust_ffmpeg"}: cargo::core::compiler::fingerprint: fingerprint error for rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("rust_ffmpeg", ["lib", "cdylib"], "D:\\Project\\flutter-ffmpeg\\rust_ffmpeg\\src\\lib.rs", Edition2021) }
+   0.267397800s  INFO prepare_target{force=false package_id=rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg) target="rust_ffmpeg"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\.fingerprint\rust_ffmpeg-291d495aab313343\test-lib-rust_ffmpeg`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace_rs::backtrace::trace_unsynchronized::<<std::backtrace::Backtrace>::create::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/mod.rs:66:14
+   2: <std::backtrace::Backtrace>::create
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:331:13
+   3: <std::backtrace::Backtrace>::capture
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:296:9
+   4: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   5: cargo_util::paths::read
+   6: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   7: cargo::core::compiler::fingerprint::prepare_target
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::cli::main
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: <&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\core\src\ops/function.rs:287:21
+  20: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  21: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  22: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  23: std::rt::lang_start_internal::{closure#0}
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:175:24
+  24: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  25: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  26: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  27: std::rt::lang_start_internal
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:171:5
+  28: main
+  29: __tmainCRTStartup
+  30: mainCRTStartup
+  31: <unknown>
+  32: <unknown>
+   0.268344900s  INFO prepare_target{force=false package_id=rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg) target="rust_ffmpeg"}: cargo::core::compiler::fingerprint: fingerprint error for rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg)/Check { test: false }/TargetInner { name: "rust_ffmpeg", doc: true, ..: with_path("D:\\Project\\flutter-ffmpeg\\rust_ffmpeg\\src\\main.rs", Edition2021) }
+   0.268372700s  INFO prepare_target{force=false package_id=rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg) target="rust_ffmpeg"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\.fingerprint\rust_ffmpeg-e1384cd21ce42b23\bin-rust_ffmpeg`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace_rs::backtrace::trace_unsynchronized::<<std::backtrace::Backtrace>::create::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/mod.rs:66:14
+   2: <std::backtrace::Backtrace>::create
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:331:13
+   3: <std::backtrace::Backtrace>::capture
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:296:9
+   4: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   5: cargo_util::paths::read
+   6: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   7: cargo::core::compiler::fingerprint::prepare_target
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::cli::main
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: <&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\core\src\ops/function.rs:287:21
+  20: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  21: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  22: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  23: std::rt::lang_start_internal::{closure#0}
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:175:24
+  24: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  25: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  26: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  27: std::rt::lang_start_internal
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:171:5
+  28: main
+  29: __tmainCRTStartup
+  30: mainCRTStartup
+  31: <unknown>
+  32: <unknown>
+   0.269295800s  INFO prepare_target{force=false package_id=rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg) target="rust_ffmpeg"}: cargo::core::compiler::fingerprint: fingerprint error for rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg)/Check { test: true }/TargetInner { name: "rust_ffmpeg", doc: true, ..: with_path("D:\\Project\\flutter-ffmpeg\\rust_ffmpeg\\src\\main.rs", Edition2021) }
+   0.269318500s  INFO prepare_target{force=false package_id=rust_ffmpeg v0.1.0 (D:\Project\flutter-ffmpeg\rust_ffmpeg) target="rust_ffmpeg"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\.fingerprint\rust_ffmpeg-80caea446f77d353\test-bin-rust_ffmpeg`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace_rs::backtrace::trace_unsynchronized::<<std::backtrace::Backtrace>::create::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src\..\..\backtrace\src\backtrace/mod.rs:66:14
+   2: <std::backtrace::Backtrace>::create
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:331:13
+   3: <std::backtrace::Backtrace>::capture
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/backtrace.rs:296:9
+   4: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   5: cargo_util::paths::read
+   6: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   7: cargo::core::compiler::fingerprint::prepare_target
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::cli::main
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: <&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\core\src\ops/function.rs:287:21
+  20: std::panicking::catch_unwind::do_call::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  21: std::panicking::catch_unwind::<i32, &dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  22: std::panic::catch_unwind::<&dyn core::ops::function::Fn<(), Output = i32> + core::panic::unwind_safe::RefUnwindSafe + core::marker::Sync, i32>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  23: std::rt::lang_start_internal::{closure#0}
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:175:24
+  24: std::panicking::catch_unwind::do_call::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:581:40
+  25: std::panicking::catch_unwind::<isize, std::rt::lang_start_internal::{closure#0}>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panicking.rs:544:19
+  26: std::panic::catch_unwind::<std::rt::lang_start_internal::{closure#0}, isize>
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/panic.rs:359:14
+  27: std::rt::lang_start_internal
+             at /rustc/ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96/library\std\src/rt.rs:171:5
+  28: main
+  29: __tmainCRTStartup
+  30: mainCRTStartup
+  31: <unknown>
+  32: <unknown>
+   Compiling dart-sys v4.1.5
+warning: dart-sys@4.1.5: Compiler family detection failed due to error: ToolNotFound: failed to find tool "gcc.exe": program not found (see https://docs.rs/cc/latest/cc/#compile-time-requirements for help)
+error: failed to run custom build command for `dart-sys v4.1.5`
+note: To improve backtraces for build dependencies, set the CARGO_PROFILE_DEV_BUILD_OVERRIDE_DEBUG=true environment variable to enable debug information generation.
+
+Caused by:
+  process didn't exit successfully: `D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\build\dart-sys-ea9c81bd30765be6\build-script-build` (exit code: 1)
+  --- stdout
+  cargo:rerun-if-env-changed=CC_FORCE_DISABLE
+  CC_FORCE_DISABLE = None
+  cargo:rerun-if-env-changed=CC_x86_64-pc-windows-gnu
+  CC_x86_64-pc-windows-gnu = None
+  cargo:rerun-if-env-changed=CC_x86_64_pc_windows_gnu
+  CC_x86_64_pc_windows_gnu = None
+  cargo:rerun-if-env-changed=HOST_CC
+  HOST_CC = None
+  cargo:rerun-if-env-changed=CC
+  CC = None
+  cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+  cargo:warning=Compiler family detection failed due to error: ToolNotFound: failed to find tool "gcc.exe": program not found (see https://docs.rs/cc/latest/cc/#compile-time-requirements for help)
+  cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+  CRATE_CC_NO_DEFAULTS = None
+  cargo:rerun-if-env-changed=CFLAGS
+  CFLAGS = None
+  cargo:rerun-if-env-changed=HOST_CFLAGS
+  HOST_CFLAGS = None
+  cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_gnu
+  CFLAGS_x86_64_pc_windows_gnu = None
+  cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-gnu
+  CFLAGS_x86_64-pc-windows-gnu = None
+
+  --- stderr
+
+
+  error occurred in cc-rs: failed to find tool "gcc.exe": program not found (see https://docs.rs/cc/latest/cc/#compile-time-requirements for help)
+
+

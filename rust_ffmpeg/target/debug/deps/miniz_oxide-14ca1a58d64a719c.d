@@ -1,0 +1,10 @@
+D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\deps\miniz_oxide-14ca1a58d64a719c.d: C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\lib.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\mod.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\core.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\output_buffer.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\stream.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\shared.rs
+
+D:\Project\flutter-ffmpeg\rust_ffmpeg\target\debug\deps\libminiz_oxide-14ca1a58d64a719c.rmeta: C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\lib.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\mod.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\core.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\output_buffer.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\stream.rs C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\shared.rs
+
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\lib.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\mod.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\core.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\output_buffer.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\inflate\stream.rs:
+C:\Users\music\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\miniz_oxide-0.8.9\src\shared.rs:
