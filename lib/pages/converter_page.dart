@@ -21,17 +21,25 @@ class _ConverterPageState extends State<ConverterPage> {
   bool _isConverting = false;
   final Map<String, double> _fileProgress = {};
   String _outputPath = '';
-  String _hardwareDevice = 'CPU';
 
   late List<FormatInfo> _supportedFormats;
   late ConversionSettings _settings;
 
   final List<String> _videoCodecs = ['h264', 'h265', 'vp9', 'av1'];
   final List<String> _audioCodecs = ['aac', 'mp3', 'opus', 'flac', 'pcm_s16le'];
-  final List<int> _videoBitrates = [500, 1000, 2000, 3000, 5000, 8000, 10000];
-  final List<int> _audioBitrates = [64, 128, 192, 256, 320];
-  final List<int> _framerates = [15, 24, 25, 30, 60];
-  final List<String> _resolutions = ['1080p', '720p', '480p', '360p'];
+  final List<int> _videoBitrates = [-1, 0, 500, 1000, 2000, 3000, 5000, 8000, 10000];
+  final List<int> _audioBitrates = [-1, 0, 64, 128, 192, 256, 320];
+  final List<int> _framerates = [0, 15, 24, 25, 30, 60];
+  final List<String> _resolutions = ['复制', '1080p', '720p', '480p', '360p'];
+
+  // 可用的硬件加速设备列表
+  final List<Map<String, String>> _hardwareDevices = [
+    {'id': 'nvidia', 'name': 'NVIDIA NVENC', 'icon': 'speed'},
+    {'id': 'amd', 'name': 'AMD VCE', 'icon': 'speed'},
+    {'id': 'intel', 'name': 'Intel QSV', 'icon': 'speed'},
+    {'id': 'cpu', 'name': 'CPU (软件编码)', 'icon': 'computer'},
+  ];
+  String _selectedHardwareId = 'nvidia';
 
   @override
   void initState() {
@@ -45,15 +53,83 @@ class _ConverterPageState extends State<ConverterPage> {
     _detectHardwareDevice();
   }
 
+  String get _hardwareDeviceName {
+    final device = _hardwareDevices.firstWhere(
+      (d) => d['id'] == _selectedHardwareId,
+      orElse: () => {'name': 'Unknown'},
+    );
+    return device['name']!;
+  }
+
+  String get _currentHardwareDevice {
+    return _settings.hardwareAcceleration ? _hardwareDeviceName : 'CPU';
+  }
+
   Future<void> _detectHardwareDevice() async {
     // TODO: 从 Rust FFI 获取实际硬件检测
-    // 目前模拟检测 Windows 上常见的硬件加速设备
+    // 目前默认选择 NVIDIA，如果不可用再尝试其他设备
     if (_settings.hardwareAcceleration) {
-      // 模拟检测：优先 NVIDIA，其次 Intel，最后 AMD
       setState(() {
-        _hardwareDevice = 'NVIDIA NVENC';
+        _selectedHardwareId = 'nvidia';
       });
     }
+  }
+
+  void _showHardwareSelectionDialog(ColorScheme colorScheme) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('选择硬件加速设备'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _hardwareDevices.map((device) {
+              final isSelected = device['id'] == _selectedHardwareId;
+              final isEnabled = _settings.hardwareAcceleration;
+              return ListTile(
+                leading: Icon(
+                  device['icon'] == 'speed' ? Icons.speed : Icons.computer,
+                  color: isSelected && isEnabled
+                      ? colorScheme.primary
+                      : colorScheme.onSurface,
+                ),
+                title: Text(
+                  device['name']!,
+                  style: TextStyle(
+                    color: isEnabled ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+                subtitle: Text(
+                  device['id'] == 'cpu' ? '使用 CPU 进行软件编码' : '使用硬件加速编码',
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: isSelected
+                    ? Icon(Icons.check, color: colorScheme.primary)
+                    : null,
+                enabled: isEnabled,
+                onTap: isEnabled
+                    ? () {
+                        setState(() {
+                          _selectedHardwareId = device['id']!;
+                        });
+                        Navigator.pop(context);
+                      }
+                    : null,
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('关闭'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -265,42 +341,51 @@ class _ConverterPageState extends State<ConverterPage> {
   }
 
   Widget _buildHardwareIndicator(ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colorScheme.outline),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            _settings.hardwareAcceleration ? Icons.speed : Icons.computer,
-            size: 16,
-            color: _settings.hardwareAcceleration 
-                ? colorScheme.primary 
-                : colorScheme.onSurface.withValues(alpha: 0.7),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '硬件加速: ',
-            style: TextStyle(
+    return GestureDetector(
+      onTap: () => _showHardwareSelectionDialog(colorScheme),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colorScheme.outline),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _settings.hardwareAcceleration ? Icons.speed : Icons.computer,
+              size: 16,
+              color: _settings.hardwareAcceleration
+                  ? colorScheme.primary
+                  : colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '硬件: ',
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 13,
+              ),
+            ),
+            Text(
+              _currentHardwareDevice,
+              style: TextStyle(
+                color: _settings.hardwareAcceleration
+                    ? colorScheme.primary
+                    : colorScheme.onSurface,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
               color: colorScheme.onSurface.withValues(alpha: 0.7),
-              fontSize: 13,
             ),
-          ),
-          Text(
-            _settings.hardwareAcceleration ? _hardwareDevice : 'CPU',
-            style: TextStyle(
-              color: _settings.hardwareAcceleration 
-                  ? colorScheme.primary 
-                  : colorScheme.onSurface,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -310,8 +395,9 @@ class _ConverterPageState extends State<ConverterPage> {
     final currentExtension =
         currentFile.path.split('.').last.toLowerCase();
 
+    // 过滤掉源文件格式，但保留 mp4（允许重新编码为不同编码器的 mp4）
     final filteredFormats = _supportedFormats
-        .where((f) => f.format != currentExtension)
+        .where((f) => f.format != currentExtension || f.format == 'mp4')
         .toList();
 
     final videoFormats =
@@ -430,7 +516,7 @@ class _ConverterPageState extends State<ConverterPage> {
                 items: _videoBitrates
                     .map((bitrate) => DropdownMenuItem(
                           value: bitrate,
-                          child: Text('$bitrate kbps'),
+                          child: Text(_getBitrateLabel(bitrate, true)),
                         ))
                     .toList(),
                 onChanged: (value) {
@@ -449,7 +535,7 @@ class _ConverterPageState extends State<ConverterPage> {
                 items: _framerates
                     .map((fps) => DropdownMenuItem(
                           value: fps,
-                          child: Text('$fps FPS'),
+                          child: Text(fps == 0 ? '复制' : '$fps FPS'),
                         ))
                     .toList(),
                 onChanged: (value) {
@@ -487,11 +573,6 @@ class _ConverterPageState extends State<ConverterPage> {
                 onChanged: (value) {
                   setState(() {
                     _settings.hardwareAcceleration = value;
-                    if (value) {
-                      _hardwareDevice = 'NVIDIA NVENC';
-                    } else {
-                      _hardwareDevice = 'CPU';
-                    }
                   });
                 },
                 thumbColor: WidgetStateProperty.resolveWith((states) {
@@ -538,7 +619,7 @@ class _ConverterPageState extends State<ConverterPage> {
               items: _audioBitrates
                   .map((bitrate) => DropdownMenuItem(
                         value: bitrate,
-                        child: Text('$bitrate kbps'),
+                        child: Text(_getBitrateLabel(bitrate, false)),
                       ))
                   .toList(),
               onChanged: (value) {
@@ -576,7 +657,9 @@ class _ConverterPageState extends State<ConverterPage> {
   }
 
   String _getResolutionLabel() {
-    if (_settings.resolutionWidth == 1920 && _settings.resolutionHeight == 1080) {
+    if (_settings.resolutionWidth == 0 || _settings.resolutionHeight == 0) {
+      return '复制';
+    } else if (_settings.resolutionWidth == 1920 && _settings.resolutionHeight == 1080) {
       return '1080p';
     } else if (_settings.resolutionWidth == 1280 && _settings.resolutionHeight == 720) {
       return '720p';
@@ -589,6 +672,10 @@ class _ConverterPageState extends State<ConverterPage> {
 
   void _setResolution(String resolution) {
     switch (resolution) {
+      case '复制':
+        _settings.resolutionWidth = 0;
+        _settings.resolutionHeight = 0;
+        break;
       case '1080p':
         _settings.resolutionWidth = 1920;
         _settings.resolutionHeight = 1080;
@@ -606,6 +693,12 @@ class _ConverterPageState extends State<ConverterPage> {
         _settings.resolutionHeight = 360;
         break;
     }
+  }
+
+  String _getBitrateLabel(int bitrate, bool isVideo) {
+    if (bitrate == ConversionSettings.bitrateCopy) return '复制';
+    if (bitrate == ConversionSettings.bitrateVBR) return '动态(VBR)';
+    return '$bitrate kbps';
   }
 
   Widget _buildFloatPanel(ColorScheme colorScheme) {
@@ -627,15 +720,41 @@ class _ConverterPageState extends State<ConverterPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(
-            child: Text(
-              _outputPath.isNotEmpty ? _outputPath : '未设置输出路径',
-              style: TextStyle(
-                color: colorScheme.onSurface,
-                fontSize: 13,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '输出文件夹:',
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _outputPath.isNotEmpty ? _outputPath : '未设置',
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (_selectedFormat != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '文件名: ${_getOutputFileName()}',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                      fontSize: 11,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(width: 8),
@@ -643,11 +762,10 @@ class _ConverterPageState extends State<ConverterPage> {
             onPressed: _selectOutputPath,
             icon: Icon(Icons.folder_open, size: 20),
             color: colorScheme.onSurface.withValues(alpha: 0.7),
-            tooltip: '选择输出路径',
+            tooltip: '选择输出文件夹',
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             padding: EdgeInsets.zero,
           ),
-          const SizedBox(width: 8),
           ElevatedButton(
             onPressed: _selectedFormat != null && !_isConverting
                 ? _startConversion
@@ -686,35 +804,39 @@ class _ConverterPageState extends State<ConverterPage> {
   }
 
   Future<void> _generateOutputPath() async {
-    final currentFile = widget.files[_selectedFileIndex];
-    final fileName = currentFile.path.split(Platform.pathSeparator).last;
-    final nameWithoutExt = fileName.split('.').first;
-    final outputFormat = _selectedFormat ?? 'mp4';
-    
+    // 默认输出到用户文档目录
     final dir = await getApplicationDocumentsDirectory();
     setState(() {
-      _outputPath = '${dir.path}/$nameWithoutExt.$outputFormat';
+      _outputPath = dir.path;
     });
   }
 
   Future<void> _selectOutputPath() async {
+    // 选择输出文件夹
+    // file_picker 11.0+ 使用静态方法
+    String? selectedDirectory = await FilePicker.getDirectoryPath(
+      dialogTitle: '选择输出文件夹',
+    );
+
+    if (selectedDirectory != null) {
+      setState(() {
+        _outputPath = selectedDirectory;
+      });
+    }
+  }
+
+  String _getOutputFileName() {
+    // 生成输出文件名
     final currentFile = widget.files[_selectedFileIndex];
     final fileName = currentFile.path.split(Platform.pathSeparator).last;
     final nameWithoutExt = fileName.split('.').first;
     final outputFormat = _selectedFormat ?? 'mp4';
+    return '$nameWithoutExt.$outputFormat';
+  }
 
-    String? selectedPath = await FilePicker.saveFile(
-      dialogTitle: '选择输出路径',
-      fileName: '$nameWithoutExt.$outputFormat',
-      type: FileType.custom,
-      allowedExtensions: [outputFormat],
-    );
-
-    if (selectedPath != null) {
-      setState(() {
-        _outputPath = selectedPath;
-      });
-    }
+  String _getFullOutputPath() {
+    // 获取完整的输出文件路径
+    return '$_outputPath${Platform.pathSeparator}${_getOutputFileName()}';
   }
 
   Future<void> _startConversion() async {
@@ -754,11 +876,19 @@ class _ConverterPageState extends State<ConverterPage> {
       name: 'ConverterPage',
     );
     developer.log(
-      '输出路径: $_outputPath',
+      '输出文件夹: $_outputPath',
       name: 'ConverterPage',
     );
     developer.log(
-      '硬件加速: ${_settings.hardwareAcceleration ? _hardwareDevice : "CPU"}',
+      '输出文件: ${_getOutputFileName()}',
+      name: 'ConverterPage',
+    );
+    developer.log(
+      '完整路径: ${_getFullOutputPath()}',
+      name: 'ConverterPage',
+    );
+    developer.log(
+      '硬件加速: $_currentHardwareDevice',
       name: 'ConverterPage',
     );
     developer.log(
@@ -766,15 +896,15 @@ class _ConverterPageState extends State<ConverterPage> {
       name: 'ConverterPage',
     );
     developer.log(
-      '视频码率: ${_settings.videoBitrate} kbps',
+      '视频码率: ${_settings.videoBitrateDisplay}',
       name: 'ConverterPage',
     );
     developer.log(
-      '帧率: ${_settings.framerate} FPS',
+      '帧率: ${_settings.framerateDisplay}',
       name: 'ConverterPage',
     );
     developer.log(
-      '分辨率: ${_settings.resolutionWidth}x${_settings.resolutionHeight}',
+      '分辨率: ${_settings.resolutionDisplay}',
       name: 'ConverterPage',
     );
     developer.log(
@@ -782,7 +912,7 @@ class _ConverterPageState extends State<ConverterPage> {
       name: 'ConverterPage',
     );
     developer.log(
-      '音频码率: ${_settings.audioBitrate} kbps',
+      '音频码率: ${_settings.audioBitrateDisplay}',
       name: 'ConverterPage',
     );
 
