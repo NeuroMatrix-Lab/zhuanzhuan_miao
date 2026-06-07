@@ -227,8 +227,6 @@ class _ConverterPageState extends State<ConverterPage> {
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-      floatingActionButton: _buildFloatPanel(colorScheme),
     );
   }
 
@@ -349,6 +347,88 @@ class _ConverterPageState extends State<ConverterPage> {
                   ),
                 );
               },
+            ),
+          ),
+          // 底部输出面板
+          _buildOutputPanel(colorScheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOutputPanel(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: colorScheme.outline)),
+        color: colorScheme.surface,
+      ),
+      child: Column(
+        children: [
+          // 第一行：输出文件夹
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _outputPath.isNotEmpty ? _outputPath : '未设置输出文件夹',
+                  style: TextStyle(
+                    color: _outputPath.isNotEmpty 
+                        ? colorScheme.onSurface 
+                        : colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: _selectOutputPath,
+                icon: Icon(Icons.folder_open, size: 18),
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                tooltip: '选择输出文件夹',
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                padding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // 第二行：开始转换按钮
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _selectedFormat != null && 
+                         _outputPath.isNotEmpty && 
+                         !_isConverting
+                  ? _startConversion
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.1),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: _isConverting
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.onPrimary,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      '开始转换',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: colorScheme.onPrimary,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -755,108 +835,6 @@ class _ConverterPageState extends State<ConverterPage> {
     if (bitrate == ConversionSettings.bitrateCopy) return '复制';
     if (bitrate == ConversionSettings.bitrateVBR) return '动态(VBR)';
     return '$bitrate kbps';
-  }
-
-  Widget _buildFloatPanel(ColorScheme colorScheme) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-        border: Border.all(color: colorScheme.outline),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '输出文件夹:',
-                  style: TextStyle(
-                    color: colorScheme.onSurface.withValues(alpha: 0.7),
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _outputPath.isNotEmpty ? _outputPath : '未设置',
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontSize: 13,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (_selectedFormat != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    '文件名: ${_getOutputFileName()}',
-                    style: TextStyle(
-                      color: colorScheme.onSurface.withValues(alpha: 0.5),
-                      fontSize: 11,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: _selectOutputPath,
-            icon: Icon(Icons.folder_open, size: 20),
-            color: colorScheme.onSurface.withValues(alpha: 0.7),
-            tooltip: '选择输出文件夹',
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            padding: EdgeInsets.zero,
-          ),
-          ElevatedButton(
-            onPressed: _selectedFormat != null && !_isConverting
-                ? _startConversion
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.1),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: _isConverting
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.onPrimary,
-                      ),
-                    ),
-                  )
-                : Text(
-                    '开始转换',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: colorScheme.onPrimary,
-                    ),
-                  ),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _generateOutputPath() async {

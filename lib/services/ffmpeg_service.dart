@@ -32,20 +32,22 @@ class FfmpegService {
   Future<String> _findFfmpegPath() async {
     // 获取应用运行目录
     String appDir = Directory.current.path;
+    developer.log('App directory: $appDir', name: 'FfmpegService');
     
     // 1. 检查应用资源目录（构建时打包的 FFmpeg）
     List<String> possiblePaths = [
       path.join(appDir, 'resources', 'windows', 'ffmpeg.exe'),
-      path.join(appDir, '..', 'resources', 'windows', 'ffmpeg.exe'),
       path.join(appDir, 'ffmpeg.exe'),
+      path.join(path.dirname(Platform.resolvedExecutable), 'resources', 'windows', 'ffmpeg.exe'),
+      path.join(path.dirname(Platform.resolvedExecutable), 'ffmpeg.exe'),
       'resources/windows/ffmpeg.exe',
-      '../resources/windows/ffmpeg.exe',
       'ffmpeg.exe',
       'ffmpeg',
     ];
     
     for (String p in possiblePaths) {
-      if (await File(p).exists()) {
+      File file = File(p);
+      if (await file.exists()) {
         _ffmpegPath = p;
         developer.log('Found FFmpeg at: $p', name: 'FfmpegService');
         return p;
@@ -60,9 +62,12 @@ class FfmpegService {
         developer.log('Found FFmpeg in PATH: $_ffmpegPath', name: 'FfmpegService');
         return _ffmpegPath;
       }
-    } catch (_) {}
+    } catch (e) {
+      developer.log('Error checking PATH: $e', name: 'FfmpegService');
+    }
     
-    // 3. 直接返回 ffmpeg（希望在 PATH 中）
+    // 3. 尝试直接调用（希望在 PATH 中）
+    developer.log('FFmpeg not found in known locations, using system ffmpeg', name: 'FfmpegService');
     return 'ffmpeg';
   }
 
@@ -73,39 +78,56 @@ class FfmpegService {
     
     try {
       String ffmpegPath = await _findFfmpegPath();
+      developer.log('Detecting hardware accelerators using: $ffmpegPath', name: 'FfmpegService');
+      
+      // 使用 -encoders 而不是 -codecs 来检测编码器
       ProcessResult result = await Process.run(
         ffmpegPath,
-        ['-hide_banner', '-codecs'],
+        ['-hide_banner', '-encoders'],
         runInShell: true,
       );
       
       if (result.exitCode == 0) {
-        String codecs = (result.stdout as String).toLowerCase();
+        String encoders = (result.stdout as String).toLowerCase();
+        developer.log('FFmpeg encoders output (first 500 chars): ${encoders.substring(0, encoders.length > 500 ? 500 : encoders.length)}', name: 'FfmpegService');
         
-        if (codecs.contains('nvenc')) {
+        // 检测 NVIDIA NVENC
+        if (encoders.contains('nvenc') || encoders.contains('h264_nvenc') || encoders.contains('hevc_nvenc')) {
           accelerators.insert(0, HardwareAccelerator(
             id: 'nvidia',
             name: 'NVIDIA NVENC',
             available: true,
           ));
+          developer.log('Detected NVIDIA NVENC', name: 'FfmpegService');
         }
-        if (codecs.contains('vc_enc') || codecs.contains('amf')) {
+
+        // 检测 AMD VCE/AMF
+        if (encoders.contains('amf') || encoders.contains('h264_amf') || encoders.contains('hevc_amf')) {
           accelerators.insert(0, HardwareAccelerator(
             id: 'amd',
             name: 'AMD VCE',
             available: true,
           ));
+          developer.log('Detected AMD VCE', name: 'FfmpegService');
         }
-        if (codecs.contains('qsv')) {
+
+        // 检测 Intel QSV
+        if (encoders.contains('qsv') || encoders.contains('h264_qsv') || encoders.contains('hevc_qsv')) {
           accelerators.insert(0, HardwareAccelerator(
             id: 'intel',
             name: 'Intel QSV',
             available: true,
           ));
+          developer.log('Detected Intel QSV', name: 'FfmpegService');
+        }
+      } else {
+        developer.log('FFmpeg encoders command failed with code: ${result.exitCode}', name: 'FfmpegService');
+        if (result.stderr != null) {
+          developer.log('FFmpeg error: ${result.stderr}', name: 'FfmpegService');
         }
       }
     } catch (e) {
-      // FFmpeg not found, only CPU available
+      developer.log('Error detecting hardware accelerators: $e', name: 'FfmpegService');
     }
     
     return accelerators;
@@ -120,6 +142,7 @@ class FfmpegService {
     String hardwareDevice,
   ) async {
     String ffmpegPath = await _findFfmpegPath();
+    developer.log('Starting conversion with FFmpeg: $ffmpegPath', name: 'FfmpegService');
     
     List<String> args = [
       '-i', inputPath,
@@ -131,7 +154,7 @@ class FfmpegService {
     // 硬件加速
     if (settings.hardwareAcceleration && hardwareDevice != 'cpu') {
       String hwAccel = '';
-      String codec = settings.videoCodec;
+      String codec = 'h264';
       
       switch (hardwareDevice) {
         case 'nvidia':
@@ -152,6 +175,7 @@ class FfmpegService {
         args.addAll(['-hwaccel', hwAccel]);
       }
       args.addAll(['-c:v', codec]);
+      developer.log('Using hardware acceleration: $hardwareDevice, codec: $codec', name: 'FfmpegService');
     } else {
       // 视频设置
       if (settings.videoBitrate == -1) {
@@ -218,7 +242,9 @@ class FfmpegService {
           double ms = double.parse(line.split('=').last);
           double progress = (ms / 1000000.0 / 60.0 * 100).clamp(0, 99);
           onProgress(progress);
-        } catch (_) {}
+        } catch (e) {
+          developer.log('Error parsing progress: $e', name: 'FfmpegService');
+        }
       }
     });
 
@@ -228,6 +254,7 @@ class FfmpegService {
     });
 
     int exitCode = await process.exitCode;
+    developer.log('FFmpeg exit code: $exitCode', name: 'FfmpegService');
     
     if (exitCode == 0) {
       onProgress(100.0);
