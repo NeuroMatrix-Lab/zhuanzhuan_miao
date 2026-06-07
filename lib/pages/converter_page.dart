@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/format_info.dart';
 import '../services/conversion_service.dart';
+import '../services/ffmpeg_service.dart';
 
 class ConverterPage extends StatefulWidget {
   final List<File> files;
@@ -32,14 +33,9 @@ class _ConverterPageState extends State<ConverterPage> {
   final List<int> _framerates = [0, 15, 24, 25, 30, 60];
   final List<String> _resolutions = ['复制', '1080p', '720p', '480p', '360p'];
 
-  // 可用的硬件加速设备列表
-  final List<Map<String, String>> _hardwareDevices = [
-    {'id': 'nvidia', 'name': 'NVIDIA NVENC', 'icon': 'speed'},
-    {'id': 'amd', 'name': 'AMD VCE', 'icon': 'speed'},
-    {'id': 'intel', 'name': 'Intel QSV', 'icon': 'speed'},
-    {'id': 'cpu', 'name': 'CPU (软件编码)', 'icon': 'computer'},
-  ];
-  String _selectedHardwareId = 'nvidia';
+  // 硬件加速相关（动态检测）
+  List<Map<String, String>> _availableHardwareDevices = [];
+  String _selectedHardwareId = 'cpu';
 
   @override
   void initState() {
@@ -54,7 +50,7 @@ class _ConverterPageState extends State<ConverterPage> {
   }
 
   String get _hardwareDeviceName {
-    final device = _hardwareDevices.firstWhere(
+    final device = _availableHardwareDevices.firstWhere(
       (d) => d['id'] == _selectedHardwareId,
       orElse: () => {'name': 'Unknown'},
     );
@@ -66,16 +62,76 @@ class _ConverterPageState extends State<ConverterPage> {
   }
 
   Future<void> _detectHardwareDevice() async {
-    // TODO: 从 Rust FFI 获取实际硬件检测
-    // 目前默认选择 NVIDIA，如果不可用再尝试其他设备
-    if (_settings.hardwareAcceleration) {
+    // 从系统检测实际可用的硬件加速设备
+    _availableHardwareDevices = [
+      {'id': 'cpu', 'name': 'CPU (软件编码)', 'icon': 'computer'},
+    ];
+
+    try {
+      // 检测可用的硬件加速器
+      final result = await Process.run(
+        'ffmpeg',
+        ['-hide_banner', '-codecs'],
+        runInShell: true,
+      );
+      final output = result.stdout.toString().toLowerCase();
+
+      // 检测 NVIDIA NVENC
+      if (output.contains('nvenc')) {
+        _availableHardwareDevices.insert(0, {
+          'id': 'nvidia',
+          'name': 'NVIDIA NVENC',
+          'icon': 'speed',
+        });
+      }
+
+      // 检测 AMD VCE/AMF
+      if (output.contains('vc_enc') || output.contains('amf')) {
+        _availableHardwareDevices.insert(0, {
+          'id': 'amd',
+          'name': 'AMD VCE',
+          'icon': 'speed',
+        });
+      }
+
+      // 检测 Intel QSV
+      if (output.contains('qsv')) {
+        _availableHardwareDevices.insert(0, {
+          'id': 'intel',
+          'name': 'Intel QSV',
+          'icon': 'speed',
+        });
+      }
+    } catch (e) {
+      developer.log('检测硬件加速设备失败: $e', name: 'ConverterPage');
+    }
+
+    // 默认选择第一个可用设备（硬件加速优先）
+    if (_availableHardwareDevices.isNotEmpty) {
+      final hwDevice = _availableHardwareDevices.firstWhere(
+        (d) => d['id'] != 'cpu',
+        orElse: () => _availableHardwareDevices.first,
+      );
       setState(() {
-        _selectedHardwareId = 'nvidia';
+        _selectedHardwareId = hwDevice['id']!;
+        _settings.hardwareAcceleration = _selectedHardwareId != 'cpu';
       });
     }
+
+    developer.log(
+      '检测到的硬件加速设备: $_availableHardwareDevices',
+      name: 'ConverterPage',
+    );
   }
 
   void _showHardwareSelectionDialog(ColorScheme colorScheme) {
+    if (_availableHardwareDevices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('正在检测硬件设备...', style: TextStyle(color: colorScheme.onSurface))),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) {
@@ -83,7 +139,7 @@ class _ConverterPageState extends State<ConverterPage> {
           title: const Text('选择硬件加速设备'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: _hardwareDevices.map((device) {
+            children: _availableHardwareDevices.map((device) {
               final isSelected = device['id'] == _selectedHardwareId;
               final isEnabled = _settings.hardwareAcceleration;
               return ListTile(
@@ -948,28 +1004,32 @@ class _ConverterPageState extends State<ConverterPage> {
     );
 
     try {
-      // TODO: 调用 Rust FFI 执行实际转换
-      // 目前使用模拟进度
-      for (int i = 0; i <= 100; i += 5) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        if (!mounted) {
-          developer.log(
-            '转换中断: Widget 已卸载',
-            name: 'ConverterPage',
-            level: 800, // WARNING level
-          );
-          return;
-        }
-        setState(() {
-          _fileProgress[inputPath] = i.toDouble();
-        });
-        if (i % 20 == 0) {
-          developer.log(
-            '转换进度: $i%',
-            name: 'ConverterPage',
-          );
-        }
-      }
+      final ffmpegService = FfmpegService();
+
+      developer.log(
+        '调用 FFmpeg 服务...',
+        name: 'ConverterPage',
+      );
+
+      // 调用实际的 FFmpeg 转换
+      await ffmpegService.convert(
+        inputPath,
+        _getFullOutputPath(),
+        _selectedFormat!,
+        _settings,
+        (progress) {
+          if (mounted) {
+            setState(() {
+              _fileProgress[inputPath] = progress;
+            });
+            developer.log(
+              '转换进度: ${progress.toStringAsFixed(1)}%',
+              name: 'ConverterPage',
+            );
+          }
+        },
+        _selectedHardwareId,
+      );
 
       if (!mounted) return;
 
@@ -984,11 +1044,7 @@ class _ConverterPageState extends State<ConverterPage> {
         level: 500,
       );
       developer.log(
-        '输出文件: $_outputPath',
-        name: 'ConverterPage',
-      );
-      developer.log(
-        '总耗时: 约 ${(100 * 100 / 1000).toStringAsFixed(1)} 秒 (模拟)',
+        '输出文件: ${_getFullOutputPath()}',
         name: 'ConverterPage',
       );
 
