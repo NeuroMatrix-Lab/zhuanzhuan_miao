@@ -1,143 +1,129 @@
-# Flutter-FFmpeg 文件格式转换工具
+<p align="center">
+  <h1 align="center">🐾 转转喵 zhuanzhuan_miao</h1>
+  <p align="center">基于 Flutter + FFmpeg 的跨平台音视频格式转换工具</p>
+</p>
 
-基于Flutter和FFmpeg开发的跨平台文件格式转换工具，支持在Windows、macOS、Linux、iOS和Android上运行，能够转换各种音视频文件格式。
+<p align="center">
+  <img src="https://img.shields.io/badge/Flutter-3.7+-02569B?logo=flutter" alt="Flutter">
+  <img src="https://img.shields.io/badge/FFmpeg-powered-green" alt="FFmpeg">
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android%20%7C%20iOS-brightgreen" alt="Platform">
+  <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
+</p>
 
-## 功能特点
+---
 
-- **跨平台支持**：支持Windows、macOS、Linux、iOS和Android
-- **多种格式支持**：支持常见的音视频格式转换
-- **批量转换**：支持同时转换多个文件
-- **实时进度显示**：转换过程中实时显示进度
-- **错误处理**：完善的错误处理和日志记录
-- **用户友好**：直观的用户界面，操作简单
+## ✨ 功能特点
 
-## 支持的格式
+- 🎬 **全格式覆盖** — 支持 MP4、MKV、AVI、MOV、WebM、FLV、MP3、WAV、AAC、FLAC、OGG、M4A 等主流音视频格式
+- 🚀 **硬件加速** — 自动检测 NVIDIA NVENC / AMD VCE / Intel QSV / Apple VideoToolbox，转码速度提升数倍
+- 📂 **拖放操作** — 桌面端支持直接拖放文件，移动端支持多选
+- 🔄 **批量转换** — 一次选择多个文件，一键全部转换
+- ⚙️ **专业参数** — 支持自定义视频编码、码率、帧率、分辨率，音频编码、码率、采样率
+- 🌓 **主题切换** — 跟随系统的深色/浅色主题
+- 📊 **实时进度** — 转换过程中实时显示进度百分比
 
-### 视频格式
-- MP4
-- MKV
-- AVI
-- MOV
-- WMV
-- FLV
-- WebM
+## 🎛️ 转换设置
 
-### 音频格式
-- MP3
-- WAV
-- AAC
-- FLAC
-- OGG
-- M4A
+### 视频
 
-## 技术栈
+| 参数 | 选项 |
+|------|------|
+| 编码器 | H.264 (libx264) / H.265 (libx265) |
+| 码率模式 | 复制源流 / 动态码率 (VBR, CRF) / 固定码率 (CBR) |
+| 帧率 | 复制源帧率 / 自定义 FPS |
+| 分辨率 | 复制源分辨率 / 自定义（如 1080p、720p） |
+| 硬件加速 | CPU / NVIDIA / AMD / Intel / Apple VideoToolbox |
 
-- **前端**：Flutter
-- **后端**：Dart + FFmpeg
-- **状态管理**：Flutter内置状态管理
-- **存储**：文件系统 + SharedPreferences
-- **FFmpeg集成**：flutter_ffmpeg插件
+### 音频
 
-## 安装说明
+| 参数 | 选项 |
+|------|------|
+| 编码器 | AAC / MP3 (libmp3lame) / 复制源流 |
+| 码率 | 复制源码率 / 动态码率 / 固定码率 (kbps) |
+| 采样率 | 复制源采样率 / 自定义 (Hz) |
 
-### 前提条件
+## 📦 安装
 
-- Flutter SDK (3.0+)
-- 对于Windows：Visual Studio 2019或更高版本（带有"Desktop development with C++"工作负载）
-- 对于macOS：Xcode 12或更高版本
-- 对于Android：Android Studio
-- 对于iOS：Xcode 12或更高版本
+### 环境要求
 
-### 安装步骤
+- Flutter SDK ≥ 3.7.0
+- Dart SDK ≥ 3.7.0
+- 系统已安装 FFmpeg（或放置在应用同级 `resources/` 目录）
 
-1. 克隆项目
-   ```bash
-   git clone https://github.com/yourusername/flutter_ffmpeg_converter.git
-   cd flutter_ffmpeg_converter
-   ```
+### 开发运行
 
-2. 安装依赖
-   ```bash
-   flutter pub get
-   ```
-
-3. 运行应用
-   ```bash
-   flutter run
-   ```
-
-## 使用方法
-
-1. 启动应用
-2. 点击"Select File"按钮选择单个文件，或点击"Batch Select"按钮选择多个文件
-3. 选择目标输出格式
-4. 点击"Convert"按钮开始转换
-5. 转换完成后，可在历史记录中查看转换结果
-
-## 构建发布版本
-
-### Windows
 ```bash
+git clone https://github.com/NeuroMatrix-Lab/zhuanzhuan_miao.git
+cd zhuanzhuan_miao
+flutter pub get
+flutter run
+```
+
+### 构建发布版
+
+```bash
+# Windows
 flutter build windows
-```
 
-### macOS
-```bash
+# macOS
 flutter build macos
-```
 
-### Linux
-```bash
+# Linux
 flutter build linux
-```
 
-### Android
-```bash
+# Android
 flutter build apk
-```
 
-### iOS
-```bash
+# iOS
 flutter build ios
 ```
 
-## 项目结构
+> **提示**：桌面端构建时，将 FFmpeg 可执行文件放入 `build/*/resources/` 目录下，应用会自动查找。
+
+## 📁 项目结构
 
 ```
-flutter_ffmpeg_converter/
+zhuanzhuan_miao/
 ├── lib/
-│   ├── main.dart
-│   ├── src/
-│   │   ├── models/
-│   │   ├── services/
-│   │   │   ├── ffmpeg_service.dart
-│   │   │   ├── file_service.dart
-│   │   │   ├── conversion_service.dart
-│   │   │   └── log_service.dart
-│   │   ├── ui/
-│   │   │   ├── screens/
-│   │   │   ├── widgets/
-│   │   │   └── themes/
-│   │   └── utils/
-│   │       └── converter_utils.dart
-│   └── assets/
-├── test/
+│   ├── main.dart              # 应用入口
+│   ├── models/
+│   │   └── format_info.dart   # 格式定义 & 转换参数模型
+│   ├── pages/
+│   │   ├── home_page.dart     # 首页（文件选择/拖放）
+│   │   └── converter_page.dart # 转换页（参数配置 & 进度）
+│   └── services/
+│       ├── ffmpeg_service.dart     # FFmpeg 调用 & 硬件检测
+│       └── conversion_service.dart # 转换任务管理
 ├── android/
 ├── ios/
 ├── linux/
 ├── macos/
-└── windows/
+└── .github/workflows/
+    └── build.yml              # CI/CD 构建
 ```
 
-## 贡献
+## 🔧 技术栈
 
-欢迎贡献代码、报告bug或提出新功能建议。请创建issue或提交pull request。
+- **UI**: Flutter + Material 3
+- **核心**: Dart + FFmpeg (系统进程调用)
+- **文件选择**: file_picker
+- **拖放支持**: desktop_drop
+- **路径管理**: path_provider + path
 
-## 许可证
+## 🤝 贡献
 
-MIT License
+欢迎提交 Issue 和 Pull Request！
 
-## 联系方式
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
 
-- 项目地址：https://github.com/yourusername/flutter_ffmpeg_converter
-- 作者：Your Name
+## 📄 许可证
+
+[MIT License](LICENSE)
+
+---
+
+<p align="center">Made with ❤️ by <a href="https://github.com/NeuroMatrix-Lab">NeuroMatrix-Lab</a></p>
