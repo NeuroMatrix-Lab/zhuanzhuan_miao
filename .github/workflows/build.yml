@@ -18,13 +18,10 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.0'
+          flutter-version: '3.38.5'
           channel: 'stable'
           cache: true
           
-      - name: Setup FFmpeg
-        run: choco install ffmpeg -y
-        
       - name: Get dependencies
         run: flutter pub get
         
@@ -36,16 +33,15 @@ jobs:
         
       - name: Download FFmpeg for Windows
         run: |
-          $ffmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+          $ffmpegUrl = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
           $outputPath = "$env:TEMP\ffmpeg.zip"
           Write-Host "Downloading FFmpeg from $ffmpegUrl"
           curl.exe -L -o $outputPath $ffmpegUrl
           Write-Host "Extracting FFmpeg..."
           Expand-Archive -Path $outputPath -DestinationPath "$env:TEMP\ffmpeg" -Force
-          # 创建 resources 目录
           New-Item -ItemType Directory -Force -Path "build\windows\x64\runner\Release\resources\windows"
-          # 复制 ffmpeg.exe
-          Copy-Item "$env:TEMP\ffmpeg\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe" "build\windows\x64\runner\Release\resources\windows\ffmpeg.exe"
+          $ffmpegExe = Get-ChildItem -Path "$env:TEMP\ffmpeg" -Filter "ffmpeg.exe" -Recurse | Select-Object -First 1
+          Copy-Item $ffmpegExe.FullName "build\windows\x64\runner\Release\resources\windows\ffmpeg.exe"
           Write-Host "FFmpeg copied to resources"
         
       - name: Upload Windows artifacts
@@ -65,7 +61,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.0'
+          flutter-version: '3.38.5'
           channel: 'stable'
           cache: true
           
@@ -80,18 +76,8 @@ jobs:
         
       - name: Download FFmpeg for macOS
         run: |
-          # 安装 homebrew 如果需要
-          if ! command -v brew &> /dev/null; then
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          fi
-          
-          # 安装 ffmpeg
           brew install ffmpeg
-          
-          # 创建 macOS 资源的临时目录
           mkdir -p build/macos/Build/Products/Release/resources/macos
-          
-          # 复制 ffmpeg
           cp $(which ffmpeg) build/macos/Build/Products/Release/resources/macos/ffmpeg
           chmod +x build/macos/Build/Products/Release/resources/macos/ffmpeg
           echo "FFmpeg copied to resources"
