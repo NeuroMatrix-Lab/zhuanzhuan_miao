@@ -28,19 +28,6 @@ jobs:
       - name: Analyze code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
         
-      - name: Download FFmpeg for Windows
-        run: |
-          $ffmpegUrl = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
-          $outputPath = "$env:TEMP\ffmpeg.zip"
-          Write-Host "Downloading FFmpeg..."
-          curl.exe -L -o $outputPath $ffmpegUrl
-          Write-Host "Extracting FFmpeg..."
-          Expand-Archive -Path $outputPath -DestinationPath "$env:TEMP\ffmpeg" -Force
-          New-Item -ItemType Directory -Force -Path "build\windows\x64\runner\Release\resources\windows"
-          $ffmpegExe = Get-ChildItem -Path "$env:TEMP\ffmpeg" -Filter "ffmpeg.exe" -Recurse | Select-Object -First 1
-          Copy-Item $ffmpegExe.FullName "build\windows\x64\runner\Release\resources\windows\ffmpeg.exe"
-          Write-Host "FFmpeg ready"
-        
       - name: Build Windows
         run: flutter build windows --release
         
@@ -65,16 +52,6 @@ jobs:
           channel: 'stable'
           cache: true
           
-      - name: Download FFmpeg for macOS
-        run: |
-          mkdir -p build/macos/Build/Products/Release/resources/macos
-          curl -L -o ffmpeg.zip "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip"
-          unzip ffmpeg.zip -d ffmpeg_extract
-          cp ffmpeg_extract/ffmpeg build/macos/Build/Products/Release/resources/macos/ffmpeg
-          chmod +x build/macos/Build/Products/Release/resources/macos/ffmpeg
-          rm -rf ffmpeg.zip ffmpeg_extract
-          echo "FFmpeg ready"
-        
       - name: Get dependencies
         run: flutter pub get
         
@@ -114,11 +91,11 @@ jobs:
       - name: Download FFmpeg for Android
         run: |
           mkdir -p assets/ffmpeg/android
-          curl -L -o ffmpeg-kit.tar.xz "https://github.com/arthenica/ffmpeg-kit/releases/download/v6.0-2/ffmpeg-kit-android-arm64-v8a.tar.xz"
+          curl -L -o ffmpeg-kit.tar.xz "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux64-gpl-shared-7.1.tar.xz"
           tar -xf ffmpeg-kit.tar.xz
-          find . -name "ffmpeg" -type f -exec cp {} assets/ffmpeg/android/ffmpeg \;
+          cp ffmpeg-n7.1-latest-linux64-gpl-shared-7.1/bin/ffmpeg assets/ffmpeg/android/ffmpeg
           chmod +x assets/ffmpeg/android/ffmpeg
-          rm -rf ffmpeg-kit.tar.xz ffmpeg-kit*
+          rm -rf ffmpeg-kit.tar.xz ffmpeg-n7.1-latest-linux64-gpl-shared-7.1
           echo "FFmpeg ready"
         
       - name: Get dependencies
@@ -147,46 +124,6 @@ jobs:
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 7
 
-  build-ios:
-    runs-on: macos-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.38.5'
-          channel: 'stable'
-          cache: true
-          
-      - name: Download FFmpeg for iOS
-        run: |
-          mkdir -p assets/ffmpeg/ios
-          curl -L -o ffmpeg-kit.tar.xz "https://github.com/arthenica/ffmpeg-kit/releases/download/v6.0-2/ffmpeg-kit-ios-arm64-static.tar.xz"
-          tar -xf ffmpeg-kit.tar.xz
-          find . -name "ffmpeg" -type f -exec cp {} assets/ffmpeg/ios/ffmpeg \;
-          chmod +x assets/ffmpeg/ios/ffmpeg
-          rm -rf ffmpeg-kit.tar.xz ffmpeg-kit*
-          echo "FFmpeg ready"
-        
-      - name: Get dependencies
-        run: flutter pub get
-        
-      - name: Analyze code
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
-        
-      - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
-        
-      - name: Upload iOS build
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-app-ios
-          path: build/ios/iphoneos/
-          retention-days: 7
-
   build-linux:
     runs-on: ubuntu-latest
     
@@ -206,16 +143,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build libgtk-3-dev
           
-      - name: Download FFmpeg for Linux
-        run: |
-          mkdir -p build/linux/x64/release/bundle/resources/linux
-          curl -L -o ffmpeg.tar.xz "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz"
-          tar -xf ffmpeg.tar.xz
-          find . -name "ffmpeg" -type f -exec cp {} build/linux/x64/release/bundle/resources/linux/ffmpeg \;
-          chmod +x build/linux/x64/release/bundle/resources/linux/ffmpeg
-          rm -rf ffmpeg.tar.xz ffmpeg-*
-          echo "FFmpeg ready"
-        
       - name: Get dependencies
         run: flutter pub get
         
