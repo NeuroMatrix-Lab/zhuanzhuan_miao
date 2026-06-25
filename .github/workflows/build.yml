@@ -12,6 +12,9 @@ jobs:
     runs-on: windows-latest
     
     steps:
+      - name: Disable git symlinks
+        run: git config --global core.symlinks false
+        
       - name: Checkout code
         uses: actions/checkout@v4
         
