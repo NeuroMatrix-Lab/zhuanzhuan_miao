@@ -12,9 +12,6 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      - name: Disable git symlinks
-        run: git config --global core.symlinks false
-        
       - name: Checkout code
         uses: actions/checkout@v4
         
@@ -33,12 +30,6 @@ jobs:
         
       - name: Build Windows
         run: flutter build windows --release
-        
-      - name: Copy FFmpeg to build output
-        run: |
-          New-Item -ItemType Directory -Force -Path "build\windows\x64\runner\Release\resources\windows"
-          Copy-Item "resources\windows\ffmpeg.exe" "build\windows\x64\runner\Release\resources\windows\ffmpeg.exe"
-          Write-Host "FFmpeg copied"
         
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -97,6 +88,16 @@ jobs:
           channel: 'stable'
           cache: true
           
+      - name: Download FFmpeg for Android
+        run: |
+          mkdir -p assets/ffmpeg/android
+          curl -L -o ffmpeg-arm64.tar.xz "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz"
+          tar -xf ffmpeg-arm64.tar.xz
+          find . -name "ffmpeg" -type f -executable -exec cp {} assets/ffmpeg/android/ffmpeg \;
+          chmod +x assets/ffmpeg/android/ffmpeg
+          rm -rf ffmpeg-arm64.tar.xz ffmpeg-*
+          echo "FFmpeg ready for Android"
+        
       - name: Get dependencies
         run: flutter pub get
         
@@ -137,6 +138,16 @@ jobs:
           channel: 'stable'
           cache: true
           
+      - name: Download FFmpeg for iOS
+        run: |
+          mkdir -p assets/ffmpeg/ios
+          curl -L -o ffmpeg-ios.tar.xz "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz"
+          tar -xf ffmpeg-ios.tar.xz
+          find . -name "ffmpeg" -type f -executable -exec cp {} assets/ffmpeg/ios/ffmpeg \;
+          chmod +x assets/ffmpeg/ios/ffmpeg
+          rm -rf ffmpeg-ios.tar.xz ffmpeg-*
+          echo "FFmpeg ready for iOS"
+        
       - name: Get dependencies
         run: flutter pub get
         
