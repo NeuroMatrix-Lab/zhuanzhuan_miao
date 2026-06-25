@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io';
+
+// desktop_drop 只在桌面端可用
+import 'package:desktop_drop/desktop_drop.dart' if (dart.library.html) '';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -42,80 +45,88 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildDropZone(ColorScheme colorScheme) {
-    return DropTarget(
-      onDragDone: (details) {
-        setState(() {
-          _selectedFiles = details.files
-              .map((xFile) => File(xFile.path))
-              .where((file) => _isMediaFile(file.path))
-              .toList();
-        });
-        if (_selectedFiles.isNotEmpty) {
-          _navigateToConverter();
-        }
-      },
-      onDragEntered: (_) => setState(() => _isDragging = true),
-      onDragExited: (_) => setState(() => _isDragging = false),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: _pickFiles,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 500,
-            height: 350,
-            decoration: BoxDecoration(
+    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+    
+    Widget content = MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _pickFiles,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 500,
+          height: 350,
+          decoration: BoxDecoration(
+            color: _isDragging
+                ? colorScheme.primary.withValues(alpha: 0.1)
+                : colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
               color: _isDragging
-                  ? colorScheme.primary.withValues(alpha: 0.1)
-                  : colorScheme.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
+                  ? colorScheme.primary
+                  : colorScheme.outline,
+              width: 2,
+              strokeAlign: BorderSide.strokeAlignInside,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _isDragging ? Icons.file_download : Icons.video_file_outlined,
+                size: 80,
                 color: _isDragging
                     ? colorScheme.primary
-                    : colorScheme.outline,
-                width: 2,
-                strokeAlign: BorderSide.strokeAlignInside,
+                    : colorScheme.onSurface.withValues(alpha: 0.5),
               ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  _isDragging ? Icons.file_download : Icons.video_file_outlined,
-                  size: 80,
+              const SizedBox(height: 24),
+              Text(
+                _isDragging
+                    ? '松开以选择文件'
+                    : isDesktop ? '点击选择或拖放媒体文件' : '点击选择媒体文件',
+                style: TextStyle(
+                  fontSize: 18,
                   color: _isDragging
                       ? colorScheme.primary
-                      : colorScheme.onSurface.withValues(alpha: 0.5),
+                      : colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  _isDragging
-                      ? '松开以选择文件'
-                      : '点击选择或拖放媒体文件',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: _isDragging
-                        ? colorScheme.primary
-                        : colorScheme.onSurface.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '支持视频: MP4, AVI, MKV, MOV, WebM\n支持音频: MP3, WAV, AAC, FLAC, OGG',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  height: 1.5,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  '支持视频: MP4, AVI, MKV, MOV, WebM\n支持音频: MP3, WAV, AAC, FLAC, OGG',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
+
+    if (isDesktop) {
+      return DropTarget(
+        onDragDone: (details) {
+          setState(() {
+            _selectedFiles = details.files
+                .map((xFile) => File(xFile.path))
+                .where((file) => _isMediaFile(file.path))
+                .toList();
+          });
+          if (_selectedFiles.isNotEmpty) {
+            _navigateToConverter();
+          }
+        },
+        onDragEntered: (_) => setState(() => _isDragging = true),
+        onDragExited: (_) => setState(() => _isDragging = false),
+        child: content,
+      );
+    }
+    
+    return content;
   }
 
   Widget _buildFileList(ColorScheme colorScheme) {
