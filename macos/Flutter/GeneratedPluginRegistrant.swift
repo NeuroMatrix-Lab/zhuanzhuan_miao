@@ -6,7 +6,7 @@ import FlutterMacOS
 import Foundation
 
 import desktop_drop
-import ffmpeg_kit_flutter_full
+import ffmpeg_kit_flutter
 import file_picker
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
