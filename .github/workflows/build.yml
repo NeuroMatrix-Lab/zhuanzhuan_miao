@@ -31,6 +31,12 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release
         
+      - name: Copy FFmpeg to build output
+        run: |
+          New-Item -ItemType Directory -Force -Path "build\windows\x64\runner\Release\resources\windows"
+          Copy-Item "resources\windows\ffmpeg.exe" "build\windows\x64\runner\Release\resources\windows\ffmpeg.exe"
+          Write-Host "FFmpeg copied to build output"
+        
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -61,6 +67,13 @@ jobs:
       - name: Build macOS
         run: flutter build macos --release
         
+      - name: Copy FFmpeg to build output
+        run: |
+          mkdir -p build/macos/Build/Products/Release/resources/macos
+          cp resources/macos/ffmpeg build/macos/Build/Products/Release/resources/macos/ffmpeg
+          chmod +x build/macos/Build/Products/Release/resources/macos/ffmpeg
+          echo "FFmpeg copied to build output"
+        
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -88,16 +101,6 @@ jobs:
           channel: 'stable'
           cache: true
           
-      - name: Download FFmpeg for Android
-        run: |
-          mkdir -p assets/ffmpeg/android
-          curl -L -o ffmpeg-kit.tar.xz "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux64-gpl-shared-7.1.tar.xz"
-          tar -xf ffmpeg-kit.tar.xz
-          cp ffmpeg-n7.1-latest-linux64-gpl-shared-7.1/bin/ffmpeg assets/ffmpeg/android/ffmpeg
-          chmod +x assets/ffmpeg/android/ffmpeg
-          rm -rf ffmpeg-kit.tar.xz ffmpeg-n7.1-latest-linux64-gpl-shared-7.1
-          echo "FFmpeg ready"
-        
       - name: Get dependencies
         run: flutter pub get
         
@@ -151,6 +154,13 @@ jobs:
         
       - name: Build Linux
         run: flutter build linux --release
+        
+      - name: Copy FFmpeg to build output
+        run: |
+          mkdir -p build/linux/x64/release/bundle/resources/linux
+          cp resources/linux/ffmpeg build/linux/x64/release/bundle/resources/linux/ffmpeg
+          chmod +x build/linux/x64/release/bundle/resources/linux/ffmpeg
+          echo "FFmpeg copied to build output"
         
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
