@@ -93,7 +93,7 @@ jobs:
           mkdir -p assets/ffmpeg/android
           curl -L -o ffmpeg-arm64.tar.xz "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz"
           tar -xf ffmpeg-arm64.tar.xz
-          find . -name "ffmpeg" -type f -executable -exec cp {} assets/ffmpeg/android/ffmpeg \;
+          find . -name "ffmpeg" -type f | head -1 | xargs -I{} cp {} assets/ffmpeg/android/ffmpeg
           chmod +x assets/ffmpeg/android/ffmpeg
           rm -rf ffmpeg-arm64.tar.xz ffmpeg-*
           echo "FFmpeg ready for Android"
@@ -143,7 +143,7 @@ jobs:
           mkdir -p assets/ffmpeg/ios
           curl -L -o ffmpeg-ios.tar.xz "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz"
           tar -xf ffmpeg-ios.tar.xz
-          find . -name "ffmpeg" -type f -executable -exec cp {} assets/ffmpeg/ios/ffmpeg \;
+          find . -name "ffmpeg" -type f | head -1 | xargs -I{} cp {} assets/ffmpeg/ios/ffmpeg
           chmod +x assets/ffmpeg/ios/ffmpeg
           rm -rf ffmpeg-ios.tar.xz ffmpeg-*
           echo "FFmpeg ready for iOS"
