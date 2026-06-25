@@ -109,6 +109,18 @@ jobs:
           channel: 'stable'
           cache: true
           
+      - name: Download FFmpeg for Android
+        run: |
+          mkdir -p assets/ffmpeg/android
+          curl -L -o assets/ffmpeg/android/ffmpeg https://github.com/arthenica/ffmpeg-kit/releases/download/v6.0-2/ffmpeg-kit-android-arm64-v8a.tar.xz
+          cd assets/ffmpeg/android
+          tar -xf ffmpeg-kit-android-arm64-v8a.tar.xz
+          find . -name "ffmpeg" -type f -exec cp {} ./ffmpeg \;
+          rm -f *.tar.xz
+          chmod +x ffmpeg
+          echo "FFmpeg for Android prepared"
+        working-directory: ${{ github.workspace }}
+          
       - name: Get dependencies
         run: flutter pub get
         
@@ -149,6 +161,18 @@ jobs:
           channel: 'stable'
           cache: true
           
+      - name: Download FFmpeg for iOS
+        run: |
+          mkdir -p assets/ffmpeg/ios
+          curl -L -o assets/ffmpeg/ios/ffmpeg https://github.com/arthenica/ffmpeg-kit/releases/download/v6.0-2/ffmpeg-kit-ios-arm64-static.tar.xz
+          cd assets/ffmpeg/ios
+          tar -xf ffmpeg-kit-ios-arm64-static.tar.xz
+          find . -name "ffmpeg" -type f -exec cp {} ./ffmpeg \;
+          rm -f *.tar.xz
+          chmod +x ffmpeg
+          echo "FFmpeg for iOS prepared"
+        working-directory: ${{ github.workspace }}
+          
       - name: Get dependencies
         run: flutter pub get
         
@@ -158,19 +182,11 @@ jobs:
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
         
-      - name: Create iOS IPA
-        run: |
-          mkdir -p build/ios/ipa
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace -scheme Runner -sdk iphoneos -archivePath ../build/ios/Runner.xcarchive archive
-          xcodebuild -exportArchive -archivePath ../build/ios/Runner.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath ../build/ios/ipa || true
-          cd ..
-          
       - name: Upload iOS build
         uses: actions/upload-artifact@v4
         with:
           name: flutter-app-ios
-          path: build/ios/
+          path: build/ios/iphoneos/
           retention-days: 7
 
   build-linux:

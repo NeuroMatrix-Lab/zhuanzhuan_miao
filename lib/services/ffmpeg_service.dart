@@ -1,8 +1,6 @@
-import 'dart:io';
 import '../models/format_info.dart';
 import 'ffmpeg_backend.dart';
 import 'ffmpeg_backend_desktop.dart';
-import 'ffmpeg_backend_ffmpeg_kit.dart';
 
 export 'ffmpeg_backend.dart' show HardwareAccelerator;
 
@@ -16,11 +14,7 @@ class FfmpegService {
   }
 
   FfmpegService._internal() {
-    if (Platform.isWindows) {
-      _backend = FFmpegBackendDesktop();
-    } else {
-      _backend = FFmpegBackendFFmpegKit();
-    }
+    _backend = FFmpegBackendDesktop();
   }
 
   Future<List<HardwareAccelerator>> detectHardwareAccelerators() => _backend.detectHardwareAccelerators();
