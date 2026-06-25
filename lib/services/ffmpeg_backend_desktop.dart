@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../models/format_info.dart';
 import 'ffmpeg_backend.dart';
@@ -16,36 +14,22 @@ class FFmpegBackendDesktop implements FFmpegBackend {
     String platform = Platform.operatingSystem;
     developer.log('Operating system: $platform', name: 'FFmpegBackendDesktop');
 
-    // 移动平台：从 assets 提取 ffmpeg 到应用目录
-    if (platform == 'android' || platform == 'ios') {
-      return await _findMobileFfmpeg();
-    }
-
-    // 桌面平台：搜索系统或打包的 ffmpeg
     String exeDir = path.dirname(Platform.resolvedExecutable);
     String appDir = Directory.current.path;
 
     developer.log('Executable directory: $exeDir', name: 'FFmpegBackendDesktop');
     developer.log('Current working directory: $appDir', name: 'FFmpegBackendDesktop');
 
-    String resourcesSubdir = platform == 'macos' ? 'macos' : 'windows';
+    String resourcesSubdir = platform == 'macos' ? 'macos' : platform == 'linux' ? 'linux' : 'windows';
+    String exeSuffix = platform == 'windows' ? '.exe' : '';
 
     List<String> possiblePaths = [
-      path.join(exeDir, 'resources', 'macos', 'ffmpeg'),
-      path.join(exeDir, 'resources', 'macos', 'ffmpeg.exe'),
-      path.join(exeDir, 'ffmpeg'),
-      path.join(appDir, 'resources', 'macos', 'ffmpeg'),
-      path.join(exeDir, 'resources', 'windows', 'ffmpeg.exe'),
-      path.join(exeDir, 'ffmpeg.exe'),
-      path.join(appDir, 'resources', 'windows', 'ffmpeg.exe'),
-      path.join(appDir, 'ffmpeg.exe'),
-      path.join(appDir, '..', 'resources', resourcesSubdir, 'ffmpeg'),
-      path.join(appDir, '..', 'resources', resourcesSubdir, 'ffmpeg.exe'),
-      path.join(appDir, '..', '..', 'resources', resourcesSubdir, 'ffmpeg'),
-      path.join(appDir, '..', '..', 'resources', resourcesSubdir, 'ffmpeg.exe'),
-      'resources/macos/ffmpeg',
-      'resources/windows/ffmpeg.exe',
-      'ffmpeg',
+      path.join(exeDir, 'resources', resourcesSubdir, 'ffmpeg$exeSuffix'),
+      path.join(appDir, 'resources', resourcesSubdir, 'ffmpeg$exeSuffix'),
+      path.join(appDir, '..', 'resources', resourcesSubdir, 'ffmpeg$exeSuffix'),
+      path.join(appDir, '..', '..', 'resources', resourcesSubdir, 'ffmpeg$exeSuffix'),
+      'resources/$resourcesSubdir/ffmpeg$exeSuffix',
+      'ffmpeg$exeSuffix',
     ];
 
     for (String p in possiblePaths) {
@@ -74,45 +58,6 @@ class FFmpegBackendDesktop implements FFmpegBackend {
 
     developer.log('FFmpeg not found in known locations, trying system ffmpeg', name: 'FFmpegBackendDesktop');
     return 'ffmpeg';
-  }
-
-  Future<String> _findMobileFfmpeg() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final ffmpegDir = Directory(path.join(appDir.path, 'ffmpeg'));
-    final ffmpegFile = File(path.join(ffmpegDir.path, 'ffmpeg'));
-
-    // 如果已经提取过，直接返回
-    if (await ffmpegFile.exists()) {
-      developer.log('Found bundled FFmpeg at: ${ffmpegFile.path}', name: 'FFmpegBackendDesktop');
-      return ffmpegFile.path;
-    }
-
-    // 从 assets 提取
-    try {
-      await ffmpegDir.create(recursive: true);
-
-      String assetPath;
-      if (Platform.isAndroid) {
-        assetPath = 'assets/ffmpeg/android/ffmpeg';
-      } else {
-        assetPath = 'assets/ffmpeg/ios/ffmpeg';
-      }
-
-      final ByteData data = await rootBundle.load(assetPath);
-      final bytes = data.buffer.asUint8List();
-      await ffmpegFile.writeAsBytes(bytes);
-
-      // 设置执行权限
-      if (Platform.isIOS) {
-        await Process.run('chmod', ['+x', ffmpegFile.path]);
-      }
-
-      developer.log('Extracted FFmpeg to: ${ffmpegFile.path}', name: 'FFmpegBackendDesktop');
-      return ffmpegFile.path;
-    } catch (e) {
-      developer.log('Error extracting FFmpeg: $e', name: 'FFmpegBackendDesktop');
-      throw Exception('无法加载 FFmpeg，请确保 assets 中包含对应平台的 ffmpeg 二进制文件');
-    }
   }
 
   @override
