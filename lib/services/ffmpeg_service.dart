@@ -23,8 +23,6 @@ class FfmpegService {
     }
   }
 
-  Future<String> _findFfmpegPath() => _backend.findPath();
-  Future<double> _getDuration(String inputPath) => _backend.getDuration(inputPath);
   Future<List<HardwareAccelerator>> detectHardwareAccelerators() => _backend.detectHardwareAccelerators();
   Future<String> getVersion() => _backend.getVersion();
 
