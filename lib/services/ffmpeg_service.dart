@@ -1,8 +1,8 @@
 import '../models/format_info.dart';
 import 'ffmpeg_backend_interface.dart';
-import 'ffmpeg_backend.dart';
+import 'ffmpeg_backend_desktop.dart' if (dart.library.android) 'ffmpeg_backend.dart' if (dart.library.ios) 'ffmpeg_backend.dart';
 
-export 'ffmpeg_backend.dart' show HardwareAccelerator;
+export 'ffmpeg_backend_interface.dart' show HardwareAccelerator;
 
 class FfmpegService {
   static FfmpegService? _instance;
@@ -14,7 +14,7 @@ class FfmpegService {
   }
 
   FfmpegService._internal() {
-    _backend = FFmpegBackendImpl();
+    _backend = FFmpegBackendDesktop();
   }
 
   Future<List<HardwareAccelerator>> detectHardwareAccelerators() => _backend.detectHardwareAccelerators();

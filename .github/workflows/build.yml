@@ -31,6 +31,12 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release
         
+      - name: Copy FFmpeg to build output
+        run: |
+          New-Item -ItemType Directory -Force -Path "build\windows\x64\runner\Release\resources\windows"
+          Copy-Item "resources\windows\ffmpeg.exe" "build\windows\x64\runner\Release\resources\windows\ffmpeg.exe"
+          Write-Host "FFmpeg copied"
+        
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
