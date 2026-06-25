@@ -1,6 +1,6 @@
 import '../models/format_info.dart';
 import 'ffmpeg_backend.dart';
-import 'ffmpeg_backend_desktop.dart' if (dart.library.android) 'ffmpeg_backend_mobile.dart' if (dart.library.ios) 'ffmpeg_backend_mobile.dart';
+import 'ffmpeg_backend_desktop.dart';
 
 export 'ffmpeg_backend.dart' show HardwareAccelerator;
 
