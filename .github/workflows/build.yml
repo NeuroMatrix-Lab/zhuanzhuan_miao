@@ -31,12 +31,6 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release
         
-      - name: Copy FFmpeg to build output
-        run: |
-          New-Item -ItemType Directory -Force -Path "build\windows\x64\runner\Release\resources\windows"
-          Copy-Item "resources\windows\ffmpeg.exe" "build\windows\x64\runner\Release\resources\windows\ffmpeg.exe"
-          Write-Host "FFmpeg copied to build output"
-        
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -67,13 +61,6 @@ jobs:
       - name: Build macOS
         run: flutter build macos --release
         
-      - name: Copy FFmpeg to build output
-        run: |
-          mkdir -p build/macos/Build/Products/Release/resources/macos
-          cp resources/macos/ffmpeg build/macos/Build/Products/Release/resources/macos/ffmpeg
-          chmod +x build/macos/Build/Products/Release/resources/macos/ffmpeg
-          echo "FFmpeg copied to build output"
-        
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -81,8 +68,54 @@ jobs:
           path: build/macos/Build/Products/Release/
           retention-days: 7
 
-  build-linux:
+  build-android:
     runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.5'
+          channel: 'stable'
+          cache: true
+          
+      - name: Get dependencies
+        run: flutter pub get
+        
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        
+      - name: Build Android APK
+        run: flutter build apk --release
+        
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
+        
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-app-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
+          
+      - name: Upload Android AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-app-android-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 7
+
+  build-ios:
+    runs-on: macos-latest
     
     steps:
       - name: Checkout code
@@ -95,30 +128,18 @@ jobs:
           channel: 'stable'
           cache: true
           
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build libgtk-3-dev
-          
       - name: Get dependencies
         run: flutter pub get
         
       - name: Analyze code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
         
-      - name: Build Linux
-        run: flutter build linux --release
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
         
-      - name: Copy FFmpeg to build output
-        run: |
-          mkdir -p build/linux/x64/release/bundle/resources/linux
-          cp resources/linux/ffmpeg build/linux/x64/release/bundle/resources/linux/ffmpeg
-          chmod +x build/linux/x64/release/bundle/resources/linux/ffmpeg
-          echo "FFmpeg copied to build output"
-        
-      - name: Upload Linux artifacts
+      - name: Upload iOS build
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-app-linux
-          path: build/linux/x64/release/bundle/
+          name: flutter-app-ios
+          path: build/ios/iphoneos/
           retention-days: 7

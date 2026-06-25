@@ -1,6 +1,6 @@
 import '../models/format_info.dart';
+import 'ffmpeg_backend_interface.dart';
 import 'ffmpeg_backend.dart';
-import 'ffmpeg_backend_desktop.dart';
 
 export 'ffmpeg_backend.dart' show HardwareAccelerator;
 
@@ -14,7 +14,7 @@ class FfmpegService {
   }
 
   FfmpegService._internal() {
-    _backend = FFmpegBackendDesktop();
+    _backend = FFmpegBackendImpl();
   }
 
   Future<List<HardwareAccelerator>> detectHardwareAccelerators() => _backend.detectHardwareAccelerators();
