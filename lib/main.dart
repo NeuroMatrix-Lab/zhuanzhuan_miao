@@ -14,16 +14,16 @@ void main() {
     ),
   );
   
-  runApp(const FFmpegConverterApp());
+  runApp(const ZhuanzhuanMiaoApp());
 }
 
-class FFmpegConverterApp extends StatelessWidget {
-  const FFmpegConverterApp({super.key});
+class ZhuanzhuanMiaoApp extends StatelessWidget {
+  const ZhuanzhuanMiaoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FFmpeg Converter',
+      title: '转转喵',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
