@@ -49,6 +49,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# FFmpeg binaries
+resources/windows/ffmpeg.exe
+resources/macos/ffmpeg
+resources/linux/ffmpeg
+
 # Added by cargo
 
 /target
