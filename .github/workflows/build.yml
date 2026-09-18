@@ -60,27 +60,29 @@ jobs:
       - name: Package MSI
         shell: pwsh
         run: |
-          $release = "build\windows\x64\runner\Release"
+          $release = (Resolve-Path "build\windows\x64\runner\Release").Path
+          if (-not $release.EndsWith("\")) { $release += "\" }
           $outDir  = "build\installer"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
           $msi = Join-Path $outDir "ZhuanzhuanMiao-1.0.0-windows-x64.msi"
 
-          # 收集 Flutter Release 目录全部文件为 WiX 组件
-          heat dir $release `
+          # heat 用 var.BuildDir 引用真实文件，light 才能找到 Source 路径
+          heat dir "$release" `
             -cg ProductComponents `
             -gg -scom -sreg -sfrag -srd `
             -dr INSTALLFOLDER `
+            -var var.BuildDir `
             -out "$outDir\files.wxs"
 
           candle -nologo `
             -arch x64 `
+            -dBuildDir="$release" `
             -out "$outDir\\" `
             "packaging\windows\zhuanzhuan_miao.wxs" `
             "$outDir\files.wxs"
 
           light -nologo `
             -ext WixUIExtension `
-            -cultures:zh-cn `
             -out $msi `
             "$outDir\zhuanzhuan_miao.wixobj" `
             "$outDir\files.wixobj"
