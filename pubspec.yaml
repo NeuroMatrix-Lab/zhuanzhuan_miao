@@ -38,6 +38,7 @@ dependencies:
   path_provider: ^2.1.0
   desktop_drop: ^0.7.1
   path: ^1.8.0
+  ffmpeg_kit_flutter_new: ^4.6.2
 
 dev_dependencies:
   flutter_test:
@@ -62,8 +63,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/ffmpeg/android/
-    - assets/ffmpeg/ios/
+    - assets/images/logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

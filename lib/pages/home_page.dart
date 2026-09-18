@@ -1,9 +1,12 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
-// desktop_drop 只在桌面端可用
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+import '../utils/media_utils.dart';
+// desktop_drop 仅桌面端
 import 'package:desktop_drop/desktop_drop.dart' if (dart.library.html) '';
 
 class HomePage extends StatefulWidget {
@@ -17,54 +20,60 @@ class _HomePageState extends State<HomePage> {
   bool _isDragging = false;
   List<File> _selectedFiles = [];
 
+  bool get _isDesktop =>
+      !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        title: Text(
-          '转转喵',
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/logo.png',
+                width: 28,
+                height: 28,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    Icon(Icons.swap_horiz, size: 22, color: scheme.primary),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text('转转喵'),
+          ],
         ),
-        centerTitle: true,
-        elevation: 0,
       ),
       body: Center(
         child: _selectedFiles.isEmpty
-            ? _buildDropZone(colorScheme)
-            : _buildFileList(colorScheme),
+            ? _dropZone(scheme)
+            : _fileListView(scheme),
       ),
     );
   }
 
-  Widget _buildDropZone(ColorScheme colorScheme) {
-    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
-    
+  Widget _dropZone(ColorScheme scheme) {
+    final size = MediaQuery.sizeOf(context);
+    final compact = size.width < 400;
+
     Widget content = MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: _pickFiles,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          width: 500,
-          height: 350,
+          width: (size.width - 48).clamp(280.0, 500.0),
+          height: (size.height * 0.55).clamp(240.0, 350.0),
           decoration: BoxDecoration(
-            color: _isDragging
-                ? colorScheme.primary.withValues(alpha: 0.1)
-                : colorScheme.surface,
+            color: _isDragging ? AppColors.selection : scheme.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _isDragging
-                  ? colorScheme.primary
-                  : colorScheme.outline,
-              width: 2,
+              color: _isDragging ? AppColors.focusBorder : scheme.outlineVariant,
+              width: _isDragging ? 2 : 1,
               strokeAlign: BorderSide.strokeAlignInside,
             ),
           ),
@@ -72,33 +81,35 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                _isDragging ? Icons.file_download : Icons.video_file_outlined,
-                size: 80,
-                color: _isDragging
-                    ? colorScheme.primary
-                    : colorScheme.onSurface.withValues(alpha: 0.5),
+                _isDragging ? Icons.file_download : Icons.swap_horiz,
+                size: compact ? 56 : 80,
+                color: AppColors.accentBlue,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Text(
                 _isDragging
                     ? '松开以选择文件'
-                    : isDesktop ? '点击选择或拖放媒体文件' : '点击选择媒体文件',
+                    : _isDesktop
+                        ? '点击选择或拖放媒体文件'
+                        : '点击选择媒体文件',
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 18,
-                  color: _isDragging
-                      ? colorScheme.primary
-                      : colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: compact ? 15 : 18,
+                  color: _isDragging ? AppColors.accentBlue : AppColors.textPrimary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                '支持视频: MP4, AVI, MKV, MOV, WebM\n支持音频: MP3, WAV, AAC, FLAC, OGG',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: colorScheme.onSurface.withValues(alpha: 0.5),
-                  height: 1.5,
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  '支持视频: MP4, AVI, MKV, MOV, WebM\n支持音频: MP3, WAV, AAC, FLAC, OGG',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textComment,
+                    height: 1.5,
+                  ),
                 ),
               ),
             ],
@@ -107,64 +118,42 @@ class _HomePageState extends State<HomePage> {
       ),
     );
 
-    if (isDesktop) {
-      return DropTarget(
-        onDragDone: (details) {
-          setState(() {
-            _selectedFiles = details.files
-                .map((xFile) => File(xFile.path))
-                .where((file) => _isMediaFile(file.path))
-                .toList();
-          });
-          if (_selectedFiles.isNotEmpty) {
-            _navigateToConverter();
-          }
-        },
-        onDragEntered: (_) => setState(() => _isDragging = true),
-        onDragExited: (_) => setState(() => _isDragging = false),
-        child: content,
-      );
-    }
-    
-    return content;
+    if (!_isDesktop) return content;
+
+    return DropTarget(
+      onDragDone: (details) {
+        final files = details.files
+            .map((f) => File(f.path))
+            .where((f) => isMediaPath(f.path))
+            .toList();
+        setState(() => _selectedFiles = files);
+        if (files.isNotEmpty) _navigateToConverter();
+      },
+      onDragEntered: (_) => setState(() => _isDragging = true),
+      onDragExited: (_) => setState(() => _isDragging = false),
+      child: content,
+    );
   }
 
-  Widget _buildFileList(ColorScheme colorScheme) {
+  Widget _fileListView(ColorScheme scheme) {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(24),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          padding: const EdgeInsets.all(16),
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
             children: [
               ElevatedButton.icon(
                 onPressed: _pickFiles,
                 icon: const Icon(Icons.add),
                 label: const Text('添加更多文件'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
               ),
-              const SizedBox(width: 16),
               OutlinedButton.icon(
-                onPressed: () {
-                  setState(() => _selectedFiles.clear());
-                },
+                onPressed: () => setState(_selectedFiles.clear),
                 icon: const Icon(Icons.clear_all),
                 label: const Text('清空'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colorScheme.onSurface.withValues(alpha: 0.7),
-                  side: BorderSide(color: colorScheme.outline),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
               ),
             ],
           ),
@@ -173,10 +162,8 @@ class _HomePageState extends State<HomePage> {
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             itemCount: _selectedFiles.length,
-            itemBuilder: (context, index) {
-              final file = _selectedFiles[index];
-              return _buildFileCard(file, colorScheme);
-            },
+            itemBuilder: (context, index) =>
+                _fileCard(_selectedFiles[index], scheme),
           ),
         ),
         Padding(
@@ -185,23 +172,16 @@ class _HomePageState extends State<HomePage> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: _selectedFiles.isNotEmpty ? _navigateToConverter : null,
+              onPressed:
+                  _selectedFiles.isEmpty ? null : _navigateToConverter,
               style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: Text(
+              child: const Text(
                 '开始转换',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: _selectedFiles.isNotEmpty 
-                      ? colorScheme.onPrimary 
-                      : colorScheme.onSurface.withValues(alpha: 0.3),
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -210,35 +190,34 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildFileCard(File file, ColorScheme colorScheme) {
-    final fileName = file.path.split(Platform.pathSeparator).last;
-    final extension = fileName.split('.').last.toUpperCase();
+  Widget _fileCard(File file, ColorScheme scheme) {
+    final name = fileNameOf(file.path);
+    final ext = name.contains('.') ? name.split('.').last.toUpperCase() : 'FILE';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline),
+        border: Border.all(color: scheme.outline),
       ),
       child: Row(
         children: [
           Container(
             width: 48,
             height: 48,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.2),
+              color: AppColors.selection,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Center(
-              child: Text(
-                extension,
-                style: TextStyle(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
+            child: Text(
+              ext,
+              style: TextStyle(
+                color: scheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
               ),
             ),
           ),
@@ -248,19 +227,16 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  fileName,
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _getFileSize(file),
+                  formatFileSize(file),
                   style: TextStyle(
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: scheme.onSurface.withValues(alpha: 0.5),
                     fontSize: 12,
                   ),
                 ),
@@ -268,69 +244,40 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.close, color: colorScheme.onSurface.withValues(alpha: 0.5)),
-            onPressed: () {
-              setState(() {
-                _selectedFiles.remove(file);
-              });
-            },
+            icon: Icon(
+              Icons.close,
+              color: scheme.onSurface.withValues(alpha: 0.5),
+            ),
+            onPressed: () => setState(() => _selectedFiles.remove(file)),
           ),
         ],
       ),
     );
   }
 
-  String _getFileSize(File file) {
-    final bytes = file.lengthSync();
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
-
-  bool _isMediaFile(String path) {
-    final ext = path.split('.').last.toLowerCase();
-    const mediaExtensions = [
-      'mp4', 'avi', 'mkv', 'mov', 'webm', 'wmv', 'flv',
-      'mp3', 'wav', 'aac', 'flac', 'ogg', 'm4a', 'wma',
-      'gif', 'jpg', 'jpeg', 'png', 'bmp', 'webp',
-    ];
-    return mediaExtensions.contains(ext);
-  }
-
   Future<void> _pickFiles() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: [
-        'mp4', 'avi', 'mkv', 'mov', 'webm', 'wmv', 'flv',
-        'mp3', 'wav', 'aac', 'flac', 'ogg', 'm4a', 'wma',
-        'gif', 'jpg', 'jpeg', 'png', 'bmp', 'webp',
-      ],
+      allowedExtensions: kMediaExtensions.toList(),
       allowMultiple: true,
     );
+    if (result == null) return;
 
-    if (result != null) {
-      setState(() {
-        _selectedFiles = result.paths
-            .whereType<String>()
-            .map((path) => File(path))
-            .toList();
-      });
-      if (_selectedFiles.isNotEmpty) {
-        _navigateToConverter();
-      }
-    }
+    setState(() {
+      _selectedFiles = result.paths
+          .whereType<String>()
+          .map(File.new)
+          .toList();
+    });
+    if (_selectedFiles.isNotEmpty) _navigateToConverter();
   }
 
-  void _navigateToConverter() {
-    Navigator.pushNamed(
+  Future<void> _navigateToConverter() async {
+    await Navigator.pushNamed(
       context,
       '/converter',
       arguments: _selectedFiles,
-    ).then((_) {
-      setState(() {});
-    });
+    );
+    if (mounted) setState(() {});
   }
 }

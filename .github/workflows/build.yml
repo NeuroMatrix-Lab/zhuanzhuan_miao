@@ -1,135 +1,271 @@
-name: Build Flutter App
+name: Build Installers
 
 on:
   push:
-    branches: [ main, rust, dev, feature/* ]
+    branches: [main, master, dev, feature/*]
   pull_request:
-    branches: [ main ]
+    branches: [main, master]
   workflow_dispatch:
 
+env:
+  FLUTTER_VERSION: '3.47.4'
+
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    
+  analyze:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.5'
-          channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
-          
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+  # ───────────── Windows → MSI ─────────────
+  windows-msi:
+    needs: analyze
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
       - name: Get dependencies
         run: flutter pub get
-        
-      - name: Analyze code
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
-        
+
       - name: Build Windows
         run: flutter build windows --release
-        
-      - name: Download FFmpeg for Windows
+
+      - name: Install WiX Toolset
+        shell: pwsh
         run: |
-          $ffmpegUrl = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
-          $outputPath = "$env:TEMP\ffmpeg.zip"
-          Write-Host "Downloading FFmpeg from $ffmpegUrl"
-          curl.exe -L -o $outputPath $ffmpegUrl
-          Write-Host "Extracting FFmpeg..."
-          Expand-Archive -Path $outputPath -DestinationPath "$env:TEMP\ffmpeg" -Force
-          New-Item -ItemType Directory -Force -Path "build\windows\x64\runner\Release\resources\windows"
-          $ffmpegExe = Get-ChildItem -Path "$env:TEMP\ffmpeg" -Filter "ffmpeg.exe" -Recurse | Select-Object -First 1
-          Copy-Item $ffmpegExe.FullName "build\windows\x64\runner\Release\resources\windows\ffmpeg.exe"
-          Write-Host "FFmpeg copied to resources"
-        
-      - name: Upload Windows artifacts
+          Invoke-WebRequest `
+            -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3141rtm/wix314.exe" `
+            -OutFile "$env:TEMP\wix314.exe"
+          Start-Process "$env:TEMP\wix314.exe" -ArgumentList "/quiet" -Wait
+          $wixBin = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          if (-not (Test-Path $wixBin)) {
+            $wixBin = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          }
+          if (-not (Test-Path $wixBin)) { throw "WiX bin not found" }
+          Add-Content -Path $env:GITHUB_PATH -Value $wixBin
+          Write-Host "WiX bin: $wixBin"
+
+      - name: Package MSI
+        shell: pwsh
+        run: |
+          $release = "build\windows\x64\runner\Release"
+          $outDir  = "build\installer"
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+          $msi = Join-Path $outDir "ZhuanzhuanMiao-1.0.0-windows-x64.msi"
+
+          # 收集 Flutter Release 目录全部文件为 WiX 组件
+          heat dir $release `
+            -cg ProductComponents `
+            -gg -scom -sreg -sfrag -srd `
+            -dr INSTALLFOLDER `
+            -out "$outDir\files.wxs"
+
+          candle -nologo `
+            -arch x64 `
+            -out "$outDir\\" `
+            "packaging\windows\zhuanzhuan_miao.wxs" `
+            "$outDir\files.wxs"
+
+          light -nologo `
+            -ext WixUIExtension `
+            -cultures:zh-cn `
+            -out $msi `
+            "$outDir\zhuanzhuan_miao.wixobj" `
+            "$outDir\files.wixobj"
+
+          if (-not (Test-Path $msi)) { throw "MSI not produced" }
+          Get-Item $msi | Format-List Name, Length, FullName
+
+      - name: Upload MSI
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-app-windows
-          path: build/windows/x64/runner/Release/
-          retention-days: 7
+          name: zhuanzhuan-miao-windows-msi
+          path: build/installer/*.msi
+          retention-days: 14
+          if-no-files-found: error
 
-  build-macos:
+  # ───────────── macOS → DMG ─────────────
+  macos-dmg:
+    needs: analyze
     runs-on: macos-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.5'
-          channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
-          
+
       - name: Get dependencies
         run: flutter pub get
-        
-      - name: Analyze code
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
-        
+
       - name: Build macOS
         run: flutter build macos --release
-        
-      - name: Download FFmpeg for macOS
+
+      - name: Package DMG
         run: |
-          brew install ffmpeg
-          mkdir -p build/macos/Build/Products/Release/resources/macos
-          cp $(which ffmpeg) build/macos/Build/Products/Release/resources/macos/ffmpeg
-          chmod +x build/macos/Build/Products/Release/resources/macos/ffmpeg
-          echo "FFmpeg copied to resources"
-        
-      - name: Upload macOS artifacts
+          brew install create-dmg || true
+          RELEASE_DIR="build/macos/Build/Products/Release"
+          APP_PATH="$(find "$RELEASE_DIR" -maxdepth 1 -name '*.app' | head -n 1)"
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app found in $RELEASE_DIR"
+            ls -la "$RELEASE_DIR" || true
+            exit 1
+          fi
+          APP_NAME="$(basename "$APP_PATH")"
+          echo "App: $APP_PATH"
+          mkdir -p build/installer
+          DMG="build/installer/ZhuanzhuanMiao-1.0.0-macos-universal.dmg"
+          rm -f "$DMG"
+          create-dmg \
+            --volname "ZhuanzhuanMiao" \
+            --window-pos 200 120 \
+            --window-size 640 400 \
+            --icon-size 100 \
+            --icon "$APP_NAME" 180 180 \
+            --hide-extension "$APP_NAME" \
+            --app-drop-link 460 180 \
+            --skip-jenkins \
+            "$DMG" \
+            "$APP_PATH" || true
+          if [ ! -f "$DMG" ]; then
+            # create-dmg 偶发返回非 0，改用 hdiutil 兜底
+            hdiutil create -volname "ZhuanzhuanMiao" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG"
+          fi
+          ls -lh "$DMG"
+
+      - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-app-macos
-          path: build/macos/Build/Products/Release/
-          retention-days: 7
+          name: zhuanzhuan-miao-macos-dmg
+          path: build/installer/*.dmg
+          retention-days: 14
+          if-no-files-found: error
 
-  build-linux:
+  # ───────────── Android → APK ─────────────
+  android-apk:
+    needs: analyze
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
         with:
-          flutter-version: '3.38.5'
-          channel: 'stable'
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
-          
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build libgtk-3-dev
-          
+
       - name: Get dependencies
         run: flutter pub get
-        
-      - name: Analyze code
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
-        
-      - name: Build Linux
-        run: flutter build linux --release
-        
-      - name: Download FFmpeg for Linux
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Stage APK
         run: |
-          curl -L -o ffmpeg-linux.tar.xz "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz"
-          tar -xf ffmpeg-linux.tar.xz
-          mkdir -p build/linux/x64/release/bundle/resources/linux
-          cp ffmpeg-master-latest-linux64-gpl/bin/ffmpeg build/linux/x64/release/bundle/resources/linux/ffmpeg
-          chmod +x build/linux/x64/release/bundle/resources/linux/ffmpeg
-          rm -rf ffmpeg-linux.tar.xz ffmpeg-master-latest-linux64-gpl
-          echo "FFmpeg copied to resources"
-        
-      - name: Upload Linux artifacts
+          mkdir -p build/installer
+          cp build/app/outputs/flutter-apk/app-release.apk \
+             build/installer/ZhuanzhuanMiao-1.0.0-android-universal.apk
+          ls -lh build/installer/
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-app-linux
-          path: build/linux/x64/release/bundle/
-          retention-days: 7
+          name: zhuanzhuan-miao-android-apk
+          path: build/installer/*.apk
+          retention-days: 14
+          if-no-files-found: error
+
+  # ───────────── Linux → RPM ─────────────
+  linux-rpm:
+    needs: analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build libgtk-3-dev libjson-glib-dev \
+            rpm ruby ruby-dev
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Linux
+        run: flutter build linux --release
+
+      - name: Package RPM
+        run: |
+          sudo gem install fpm --no-document
+          BUNDLE="build/linux/x64/release/bundle"
+          STAGE="build/rpm-root"
+          rm -rf "$STAGE"
+          mkdir -p \
+            "$STAGE/opt/zhuanzhuan-miao" \
+            "$STAGE/usr/share/applications" \
+            "$STAGE/usr/share/icons/hicolor/512x512/apps"
+
+          cp -a "$BUNDLE/." "$STAGE/opt/zhuanzhuan-miao/"
+          chmod +x "$STAGE/opt/zhuanzhuan-miao/flutter_ffmpeg_converter"
+
+          cp packaging/linux/zhuanzhuan-miao.desktop \
+             "$STAGE/usr/share/applications/"
+          if [ -f assets/images/logo.png ]; then
+            cp assets/images/logo.png \
+               "$STAGE/usr/share/icons/hicolor/512x512/apps/zhuanzhuan-miao.png"
+          fi
+
+          mkdir -p build/installer
+          fpm \
+            --input-type dir \
+            --output-type rpm \
+            --name zhuanzhuan-miao \
+            --version 1.0.0 \
+            --iteration 1 \
+            --architecture x86_64 \
+            --license GPL-3.0 \
+            --vendor "NeuroMatrix-Lab" \
+            --description "转转喵 - 跨平台音视频格式转换工具" \
+            --url "https://github.com/NeuroMatrix-Lab/zhuanzhuan_miao" \
+            --category Video \
+            --after-install packaging/linux/postinstall.sh \
+            --package build/installer \
+            -C "$STAGE" \
+            .
+          mv build/installer/zhuanzhuan-miao-1.0.0-1.x86_64.rpm \
+             build/installer/ZhuanzhuanMiao-1.0.0-linux-x86_64.rpm
+          ls -lh build/installer/
+
+      - name: Upload RPM
+        uses: actions/upload-artifact@v4
+        with:
+          name: zhuanzhuan-miao-linux-rpm
+          path: build/installer/*.rpm
+          retention-days: 14
+          if-no-files-found: error

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=转转喵
+Name[en]=ZhuanzhuanMiao
+Comment=跨平台音视频格式转换工具
+Comment[en]=Cross-platform audio/video converter
+Exec=/opt/zhuanzhuan-miao/flutter_ffmpeg_converter
+Icon=zhuanzhuan-miao
+Terminal=false
+Type=Application
+Categories=AudioVideo;AudioVideoEditing;
+StartupWMClass=flutter_ffmpeg_converter

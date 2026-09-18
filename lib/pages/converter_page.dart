@@ -1,11 +1,15 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
-import 'dart:developer' as developer;
-import 'package:path_provider/path_provider.dart';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
 import '../models/format_info.dart';
 import '../services/conversion_service.dart';
 import '../services/ffmpeg_service.dart';
+import '../theme/app_colors.dart';
+import '../utils/media_utils.dart';
 
 class ConverterPage extends StatefulWidget {
   final List<File> files;
@@ -20,198 +24,107 @@ class _ConverterPageState extends State<ConverterPage> {
   int _selectedFileIndex = 0;
   String? _selectedFormat;
   bool _isConverting = false;
-  final Map<String, double> _fileProgress = {};
   String _outputPath = '';
-
-  late List<FormatInfo> _supportedFormats;
+  final Map<String, double> _fileProgress = {};
   late ConversionSettings _settings;
-
-  final List<String> _videoCodecs = ['h264', 'h265', 'vp9', 'av1'];
-  final List<String> _audioCodecs = ['aac', 'mp3', 'opus', 'flac', 'pcm_s16le'];
-  final List<int> _videoBitrates = [-1, 0, 500, 1000, 2000, 3000, 5000, 8000, 10000];
-  final List<int> _audioBitrates = [-1, 0, 64, 128, 192, 256, 320];
-  final List<int> _framerates = [0, 15, 24, 25, 30, 60];
-  final List<String> _resolutions = ['复制', '1080p', '720p', '480p', '360p'];
-
-  // 硬件加速相关（动态检测）
-  List<Map<String, String>> _availableHardwareDevices = [];
+  List<HardwareAccelerator> _devices = const [
+    HardwareAccelerator(id: 'cpu', name: 'CPU'),
+  ];
   String _selectedHardwareId = 'cpu';
+
+  static const _videoCodecs = ['h264', 'h265', 'vp9', 'av1'];
+  static const _audioCodecs = ['aac', 'mp3', 'opus', 'flac', 'pcm_s16le'];
+  static const _videoBitrates = [-1, 0, 500, 1000, 2000, 3000, 5000, 8000, 10000];
+  static const _audioBitrates = [-1, 0, 64, 128, 192, 256, 320];
+  static const _framerates = [0, 15, 24, 25, 30, 60];
+  static const _resolutionMap = {
+    '复制': (0, 0),
+    '1080p': (1920, 1080),
+    '720p': (1280, 720),
+    '480p': (854, 480),
+    '360p': (640, 360),
+  };
 
   @override
   void initState() {
     super.initState();
-    _supportedFormats = ConversionService.getSupportedFormats();
     _settings = ConversionSettings();
-    for (var file in widget.files) {
-      _fileProgress[file.path] = 0.0;
+    for (final f in widget.files) {
+      _fileProgress[f.path] = 0;
     }
-    _generateOutputPath();
-    _detectHardwareDevice();
+    _initOutput();
+    _detectHardware();
   }
 
-  String get _hardwareDeviceName {
-    final device = _availableHardwareDevices.firstWhere(
-      (d) => d['id'] == _selectedHardwareId,
-      orElse: () => {'name': 'Unknown'},
-    );
-    return device['name']!;
+  String get _hardwareLabel {
+    if (!_settings.hardwareAcceleration) return 'CPU';
+    for (final d in _devices) {
+      if (d.id == _selectedHardwareId) return d.name;
+    }
+    return 'CPU';
   }
 
-  String get _currentHardwareDevice {
-    return _settings.hardwareAcceleration ? _hardwareDeviceName : 'CPU';
+  Future<void> _initOutput() async {
+    final dir = await getApplicationDocumentsDirectory();
+    if (mounted) setState(() => _outputPath = dir.path);
   }
 
-  Future<void> _detectHardwareDevice() async {
-    // 从系统检测实际可用的硬件加速设备
-    _availableHardwareDevices = [
-      {'id': 'cpu', 'name': 'CPU (软件编码)', 'icon': 'computer'},
-    ];
-
+  Future<void> _detectHardware() async {
     try {
-      // 使用 FfmpegService 统一检测硬件加速器（-encoders 比 -codecs 更准确）
-      final ffmpegService = FfmpegService();
-      final accelerators = await ffmpegService.detectHardwareAccelerators();
-
-      for (var acc in accelerators) {
-        if (acc.id != 'cpu') {
-          _availableHardwareDevices.insert(0, {
-            'id': acc.id,
-            'name': acc.name,
-            'icon': 'speed',
-          });
-        }
-      }
-    } catch (e) {
-      developer.log('检测硬件加速设备失败: $e', name: 'ConverterPage');
-    }
-
-    // 默认选择第一个可用设备（硬件加速优先）
-    if (_availableHardwareDevices.isNotEmpty) {
-      final hwDevice = _availableHardwareDevices.firstWhere(
-        (d) => d['id'] != 'cpu',
-        orElse: () => _availableHardwareDevices.first,
-      );
+      final list = await FfmpegService.detectHardwareAccelerators();
+      if (!mounted) return;
       setState(() {
-        _selectedHardwareId = hwDevice['id']!;
-        _settings.hardwareAcceleration = _selectedHardwareId != 'cpu';
-      });
-    }
-
-    developer.log(
-      '检测到的硬件加速设备: $_availableHardwareDevices',
-      name: 'ConverterPage',
-    );
-  }
-
-  void _showHardwareSelectionDialog(ColorScheme colorScheme) {
-    if (_availableHardwareDevices.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('正在检测硬件设备...', style: TextStyle(color: colorScheme.onSurface))),
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('选择硬件加速设备'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: _availableHardwareDevices.map((device) {
-              final isSelected = device['id'] == _selectedHardwareId;
-              final isEnabled = _settings.hardwareAcceleration;
-              return ListTile(
-                leading: Icon(
-                  device['icon'] == 'speed' ? Icons.speed : Icons.computer,
-                  color: isSelected && isEnabled
-                      ? colorScheme.primary
-                      : colorScheme.onSurface,
-                ),
-                title: Text(
-                  device['name']!,
-                  style: TextStyle(
-                    color: isEnabled ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-                ),
-                subtitle: Text(
-                  device['id'] == 'cpu' ? '使用 CPU 进行软件编码' : '使用硬件加速编码',
-                  style: TextStyle(
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
-                    fontSize: 12,
-                  ),
-                ),
-                trailing: isSelected
-                    ? Icon(Icons.check, color: colorScheme.primary)
-                    : null,
-                enabled: isEnabled,
-                onTap: isEnabled
-                    ? () {
-                        setState(() {
-                          _selectedHardwareId = device['id']!;
-                        });
-                        Navigator.pop(context);
-                      }
-                    : null,
-              );
-            }).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('关闭'),
-            ),
-          ],
+        _devices = list;
+        final hw = list.firstWhere(
+          (d) => d.id != 'cpu',
+          orElse: () => list.first,
         );
-      },
-    );
+        _selectedHardwareId = hw.id;
+        _settings.hardwareAcceleration = hw.id != 'cpu';
+      });
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        title: Text(
-          '选择输出格式',
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        elevation: 0,
+        title: const Text('选择输出格式'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: _buildFileList(colorScheme),
-          ),
-          Container(
-            width: 1,
-            color: colorScheme.outline,
-          ),
-          Expanded(
-            flex: 5,
-            child: _buildRightPanel(colorScheme),
-          ),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth >= 900) {
+            return Row(
+              children: [
+                Expanded(flex: 2, child: _wideFilePanel(scheme)),
+                VerticalDivider(width: 1, color: scheme.outline),
+                Expanded(flex: 5, child: _settingsPanel(scheme)),
+              ],
+            );
+          }
+          return Column(
+            children: [
+              _narrowFileBar(scheme),
+              Expanded(child: _settingsPanel(scheme)),
+              _outputBar(scheme),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildFileList(ColorScheme colorScheme) {
+  // ---------- 文件区 ----------
+
+  Widget _wideFilePanel(ColorScheme scheme) {
     return Container(
-      color: colorScheme.surface,
+      color: scheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -220,7 +133,7 @@ class _ConverterPageState extends State<ConverterPage> {
             child: Text(
               '已选文件',
               style: TextStyle(
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                color: scheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -229,142 +142,203 @@ class _ConverterPageState extends State<ConverterPage> {
           Expanded(
             child: ListView.builder(
               itemCount: widget.files.length,
-              itemBuilder: (context, index) {
-                final file = widget.files[index];
-                final isSelected = index == _selectedFileIndex;
-                final fileName = file.path.split(Platform.pathSeparator).last;
-                final extension = fileName.split('.').last.toUpperCase();
-
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedFileIndex = index);
-                    _generateOutputPath();
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? colorScheme.primary.withValues(alpha: 0.2)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? colorScheme.primary
-                            : Colors.transparent,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? colorScheme.primary
-                                : colorScheme.onSurface.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              extension.length > 3
-                                  ? extension.substring(0, 3)
-                                  : extension,
-                              style: TextStyle(
-                                color: isSelected 
-                                    ? colorScheme.onPrimary 
-                                    : colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                fileName,
-                                style: TextStyle(
-                                  color: isSelected
-                                      ? colorScheme.onSurface
-                                      : colorScheme.onSurface.withValues(alpha: 0.7),
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (_fileProgress[file.path]! > 0 &&
-                                  _fileProgress[file.path]! < 100)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: LinearProgressIndicator(
-                                    value: _fileProgress[file.path]! / 100,
-                                    backgroundColor: colorScheme.onSurface.withValues(alpha: 0.1),
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      colorScheme.primary,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        if (_fileProgress[file.path] == 100)
-                          Icon(
-                            Icons.check_circle,
-                            color: colorScheme.primary,
-                            size: 20,
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+              itemBuilder: (context, index) =>
+                  _fileTile(scheme, index),
             ),
           ),
-          // 底部输出面板
-          _buildOutputPanel(colorScheme),
+          _outputBar(scheme),
         ],
       ),
     );
   }
 
-  Widget _buildOutputPanel(ColorScheme colorScheme) {
+  Widget _fileTile(ColorScheme scheme, int index) {
+    final file = widget.files[index];
+    final selected = index == _selectedFileIndex;
+    final name = fileNameOf(file.path);
+    final ext = name.contains('.')
+        ? name.split('.').last.toUpperCase()
+        : 'FILE';
+    final progress = _fileProgress[file.path] ?? 0;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedFileIndex = index);
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.selection
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? scheme.primary : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected
+                    ? scheme.primary
+                    : scheme.onSurface.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                ext.length > 3 ? ext.substring(0, 3) : ext,
+                style: TextStyle(
+                  color: selected ? scheme.onPrimary : scheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: scheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (progress > 0 && progress < 100)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: LinearProgressIndicator(value: progress / 100),
+                    ),
+                ],
+              ),
+            ),
+            if (progress >= 100)
+              Icon(Icons.check_circle, color: AppColors.success, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _narrowFileBar(ColorScheme scheme) {
+    if (widget.files.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      color: scheme.surface,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '已选文件',
+            style: TextStyle(
+              color: scheme.onSurface.withValues(alpha: 0.7),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 56,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: widget.files.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final file = widget.files[index];
+                final selected = index == _selectedFileIndex;
+                final progress = _fileProgress[file.path] ?? 0;
+
+                return ChoiceChip(
+                  selected: selected,
+                  selectedColor: scheme.primary,
+                  label: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 140),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          fileNameOf(file.path),
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: selected
+                                ? scheme.onPrimary
+                                : scheme.onSurface,
+                          ),
+                        ),
+                        if (progress > 0 && progress < 100)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: SizedBox(
+                              width: 100,
+                              child: LinearProgressIndicator(
+                                value: progress / 100,
+                                minHeight: 3,
+                                valueColor: AlwaysStoppedAnimation(
+                                  selected
+                                      ? scheme.onPrimary
+                                      : scheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  onSelected: (_) => setState(() => _selectedFileIndex = index),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------- 输出 / 转换 ----------
+
+  Widget _outputBar(ColorScheme scheme) {
+    final canStart = _selectedFormat != null &&
+        _outputPath.isNotEmpty &&
+        !_isConverting;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: colorScheme.outline)),
-        color: colorScheme.surface,
+        color: scheme.surface,
+        border: Border(top: BorderSide(color: scheme.outline)),
       ),
       child: Column(
         children: [
-          // 第一行：输出文件夹
           Row(
             children: [
               Expanded(
                 child: Text(
-                  _outputPath.isNotEmpty ? _outputPath : '未设置输出文件夹',
-                  style: TextStyle(
-                    color: _outputPath.isNotEmpty 
-                        ? colorScheme.onSurface 
-                        : colorScheme.onSurface.withValues(alpha: 0.5),
-                    fontSize: 12,
-                  ),
+                  _outputPath.isEmpty ? '未设置输出文件夹' : _outputPath,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _outputPath.isEmpty
+                        ? scheme.onSurface.withValues(alpha: 0.5)
+                        : scheme.onSurface,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
               IconButton(
-                onPressed: _selectOutputPath,
-                icon: Icon(Icons.folder_open, size: 18),
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                onPressed: _pickOutputDir,
+                icon: const Icon(Icons.folder_open, size: 18),
                 tooltip: '选择输出文件夹',
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 padding: EdgeInsets.zero,
@@ -372,41 +346,19 @@ class _ConverterPageState extends State<ConverterPage> {
             ],
           ),
           const SizedBox(height: 8),
-          // 第二行：开始转换按钮
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _selectedFormat != null && 
-                         _outputPath.isNotEmpty && 
-                         !_isConverting
-                  ? _startConversion
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.1),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
+              onPressed: canStart ? _startConversion : null,
               child: _isConverting
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.onPrimary,
-                        ),
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(
+                  : const Text(
                       '开始转换',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: colorScheme.onPrimary,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
             ),
           ),
@@ -415,39 +367,96 @@ class _ConverterPageState extends State<ConverterPage> {
     );
   }
 
-  Widget _buildRightPanel(ColorScheme colorScheme) {
+  Future<void> _pickOutputDir() async {
+    final dir = await FilePicker.getDirectoryPath(dialogTitle: '选择输出文件夹');
+    if (dir != null && mounted) setState(() => _outputPath = dir);
+  }
+
+  String get _outputFileName {
+    final name = fileNameOf(widget.files[_selectedFileIndex].path);
+    final base = name.contains('.') ? name.split('.').first : name;
+    return '$base.${_selectedFormat ?? 'mp4'}';
+  }
+
+  String get _fullOutputPath => p.join(_outputPath, _outputFileName);
+
+  Future<void> _startConversion() async {
+    if (_selectedFormat == null) return;
+
+    final input = widget.files[_selectedFileIndex];
+    if (!await input.exists()) {
+      _toastError('输入文件不存在');
+      return;
+    }
+    if (_outputPath.isEmpty) {
+      _toastError('请先设置输出路径');
+      return;
+    }
+
+    setState(() => _isConverting = true);
+    final outputPath = _fullOutputPath;
+
+    try {
+      await FfmpegService.convert(
+        input.path,
+        outputPath,
+        _settings,
+        (p) {
+          if (!mounted) return;
+          setState(() => _fileProgress[input.path] = p);
+        },
+        _selectedHardwareId,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _isConverting = false;
+        _fileProgress[input.path] = 100;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('转换完成!'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isConverting = false);
+      _toastError('转换失败: $e');
+    }
+  }
+
+  void _toastError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  // ---------- 格式与参数 ----------
+
+  Widget _settingsPanel(ColorScheme scheme) {
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 硬件设备指示
-            _buildHardwareIndicator(colorScheme),
+            _hardwareChip(scheme),
             const SizedBox(height: 16),
-            Text(
-              '输出格式',
-              style: TextStyle(
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            _sectionTitle(scheme, '输出格式'),
             const SizedBox(height: 12),
-            _buildFormatGrid(colorScheme),
-            const SizedBox(height: 32),
+            _formatChips(scheme),
             if (_selectedFormat != null) ...[
-              Text(
-                '参数配置',
-                style: TextStyle(
-                  color: colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildSettingsPanel(colorScheme),
+              const SizedBox(height: 24),
+              _sectionTitle(scheme, '参数配置'),
+              const SizedBox(height: 12),
+              _paramCard(scheme),
             ],
           ],
         ),
@@ -455,612 +464,301 @@ class _ConverterPageState extends State<ConverterPage> {
     );
   }
 
-  Widget _buildHardwareIndicator(ColorScheme colorScheme) {
+  Widget _sectionTitle(ColorScheme scheme, String text) => Text(
+        text,
+        style: TextStyle(
+          color: scheme.onSurface.withValues(alpha: 0.7),
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+
+  Widget _hardwareChip(ColorScheme scheme) {
+    final on = _settings.hardwareAcceleration;
     return GestureDetector(
-      onTap: () => _showHardwareSelectionDialog(colorScheme),
+      onTap: () => _showHardwareDialog(scheme),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: colorScheme.outline),
+          border: Border.all(color: scheme.outline),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              _settings.hardwareAcceleration ? Icons.speed : Icons.computer,
+              on ? Icons.speed : Icons.computer,
               size: 16,
-              color: _settings.hardwareAcceleration
-                  ? colorScheme.primary
-                  : colorScheme.onSurface.withValues(alpha: 0.7),
+              color: on ? scheme.primary : scheme.onSurface,
             ),
             const SizedBox(width: 8),
+            Text('硬件: ',
+                style: TextStyle(
+                  color: scheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: 13,
+                )),
             Text(
-              '硬件: ',
+              _hardwareLabel,
               style: TextStyle(
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
-                fontSize: 13,
-              ),
-            ),
-            Text(
-              _currentHardwareDevice,
-              style: TextStyle(
-                color: _settings.hardwareAcceleration
-                    ? colorScheme.primary
-                    : colorScheme.onSurface,
+                color: on ? scheme.primary : scheme.onSurface,
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 18,
-              color: colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
+            const Icon(Icons.arrow_drop_down, size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFormatGrid(ColorScheme colorScheme) {
-    final currentFile = widget.files[_selectedFileIndex];
-    final currentExtension =
-        currentFile.path.split('.').last.toLowerCase();
+  void _showHardwareDialog(ColorScheme scheme) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('选择硬件加速设备'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _devices.map((d) {
+            final selected = d.id == _selectedHardwareId;
+            final enabled = _settings.hardwareAcceleration;
+            return ListTile(
+              leading: Icon(
+                d.id == 'cpu' ? Icons.computer : Icons.speed,
+                color: selected && enabled ? scheme.primary : null,
+              ),
+              title: Text(d.name),
+              subtitle: Text(
+                d.id == 'cpu' ? '使用 CPU 进行软件编码' : '使用硬件加速编码',
+                style: const TextStyle(fontSize: 12),
+              ),
+              trailing: selected ? Icon(Icons.check, color: scheme.primary) : null,
+              enabled: enabled,
+              onTap: enabled
+                  ? () {
+                      setState(() => _selectedHardwareId = d.id);
+                      Navigator.pop(context);
+                    }
+                  : null,
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
 
-    // 过滤掉源文件格式，但保留 mp4（允许重新编码为不同编码器的 mp4）
-    final filteredFormats = _supportedFormats
-        .where((f) => f.format != currentExtension || f.format == 'mp4')
+  Widget _formatChips(ColorScheme scheme) {
+    final currentExt =
+        fileNameOf(widget.files[_selectedFileIndex].path).split('.').last.toLowerCase();
+    final list = ConversionService.formats
+        .where((f) => f.format != currentExt || f.format == 'mp4')
         .toList();
 
-    final videoFormats =
-        filteredFormats.where((f) => f.isVideo).toList();
-    final audioFormats =
-        filteredFormats.where((f) => !f.isVideo).toList();
+    Widget wrap(List<FormatInfo> items) => Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: items.map((f) {
+            final selected = _selectedFormat == f.format;
+            return GestureDetector(
+              onTap: () => setState(() {
+                _selectedFormat = f.format;
+                _settings = ConversionSettings();
+              }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: selected ? scheme.primary : scheme.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: selected ? scheme.primary : scheme.outline,
+                  ),
+                ),
+                child: Text(
+                  '.${f.format}',
+                  style: TextStyle(
+                    color: selected ? scheme.onPrimary : scheme.onSurface,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        );
+
+    final videos = list.where((f) => f.isVideo).toList();
+    final audios = list.where((f) => !f.isVideo).toList();
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (videoFormats.isNotEmpty) ...[
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: videoFormats.map((format) {
-              return _buildFormatChip(format, colorScheme);
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-        ],
-        if (audioFormats.isNotEmpty) ...[
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: audioFormats.map((format) {
-              return _buildFormatChip(format, colorScheme);
-            }).toList(),
-          ),
-        ],
+        if (videos.isNotEmpty) ...[wrap(videos), const SizedBox(height: 12)],
+        if (audios.isNotEmpty) wrap(audios),
       ],
     );
   }
 
-  Widget _buildFormatChip(FormatInfo format, ColorScheme colorScheme) {
-    final isSelected = _selectedFormat == format.format;
+  Widget _paramCard(ColorScheme scheme) {
+    final isVideo = ConversionService.formats
+        .firstWhere((f) => f.format == _selectedFormat)
+        .isVideo;
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedFormat = format.format;
-          _settings = ConversionSettings();
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected
-                ? colorScheme.primary
-                : colorScheme.outline,
-          ),
-        ),
-        child: Text(
-          '.${format.format}',
-          style: TextStyle(
-            color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 15,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingsPanel(ColorScheme colorScheme) {
-    final outputIsVideo = _selectedFormat != null &&
-        _supportedFormats
-            .firstWhere((f) => f.format == _selectedFormat)
-            .isVideo;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline),
-      ),
-      child: Column(
-        children: [
-          if (outputIsVideo) ...[
-            Text(
-              '视频设置',
-              style: TextStyle(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildSettingRow(colorScheme, '编码器',
-              DropdownButton<String>(
-                value: _settings.videoCodec,
-                items: _videoCodecs
-                    .map((codec) => DropdownMenuItem(
-                          value: codec,
-                          child: Text(codec.toUpperCase()),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _settings.videoCodec = value);
-                  }
-                },
-                style: TextStyle(color: colorScheme.onSurface),
-                dropdownColor: colorScheme.surface,
-                underline: Container(),
-              ),
-            ),
-            _buildSettingRow(colorScheme, '视频码率',
-              DropdownButton<int>(
-                value: _settings.videoBitrate,
-                items: _videoBitrates
-                    .map((bitrate) => DropdownMenuItem(
-                          value: bitrate,
-                          child: Text(_getBitrateLabel(bitrate, true)),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _settings.videoBitrate = value);
-                  }
-                },
-                style: TextStyle(color: colorScheme.onSurface),
-                dropdownColor: colorScheme.surface,
-                underline: Container(),
-              ),
-            ),
-            _buildSettingRow(colorScheme, '帧率',
-              DropdownButton<int>(
-                value: _settings.framerate,
-                items: _framerates
-                    .map((fps) => DropdownMenuItem(
-                          value: fps,
-                          child: Text(fps == 0 ? '复制' : '$fps FPS'),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _settings.framerate = value);
-                  }
-                },
-                style: TextStyle(color: colorScheme.onSurface),
-                dropdownColor: colorScheme.surface,
-                underline: Container(),
-              ),
-            ),
-            _buildSettingRow(colorScheme, '分辨率',
-              DropdownButton<String>(
-                value: _getResolutionLabel(),
-                items: _resolutions
-                    .map((res) => DropdownMenuItem(
-                          value: res,
-                          child: Text(res),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _setResolution(value));
-                  }
-                },
-                style: TextStyle(color: colorScheme.onSurface),
-                dropdownColor: colorScheme.surface,
-                underline: Container(),
-              ),
-            ),
-            _buildSettingRow(colorScheme, '硬件加速',
-              Switch(
-                value: _settings.hardwareAcceleration,
-                onChanged: (value) {
-                  setState(() {
-                    _settings.hardwareAcceleration = value;
-                  });
-                },
-                thumbColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return colorScheme.primary;
-                  }
-                  return null;
-                }),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-          Text(
-            '音频设置',
+    final children = <Widget>[
+      if (isVideo) ...[
+        Text('视频设置',
             style: TextStyle(
-              color: colorScheme.onSurface,
+              color: scheme.onSurface,
               fontWeight: FontWeight.bold,
               fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildSettingRow(colorScheme, '音频编码器',
-            DropdownButton<String>(
-              value: _settings.audioCodec,
-              items: _audioCodecs
-                  .map((codec) => DropdownMenuItem(
-                        value: codec,
-                        child: Text(codec.toUpperCase().replaceAll('_', ' ')),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _settings.audioCodec = value);
-                }
-              },
-              style: TextStyle(color: colorScheme.onSurface),
-              dropdownColor: colorScheme.surface,
-              underline: Container(),
-            ),
-          ),
-          _buildSettingRow(colorScheme, '音频码率',
-            DropdownButton<int>(
-              value: _settings.audioBitrate,
-              items: _audioBitrates
-                  .map((bitrate) => DropdownMenuItem(
-                        value: bitrate,
-                        child: Text(_getBitrateLabel(bitrate, false)),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _settings.audioBitrate = value);
-                }
-              },
-              style: TextStyle(color: colorScheme.onSurface),
-              dropdownColor: colorScheme.surface,
-              underline: Container(),
-            ),
-          ),
-        ],
+            )),
+        const SizedBox(height: 8),
+        _row(scheme, '编码器', _dropdown<String>(
+          scheme: scheme,
+          value: _settings.videoCodec,
+          items: _videoCodecs,
+          label: (v) => v.toUpperCase(),
+          onChanged: (v) => setState(() => _settings.videoCodec = v),
+        )),
+        _row(scheme, '视频码率', _dropdown<int>(
+          scheme: scheme,
+          value: _settings.videoBitrate,
+          items: _videoBitrates,
+          label: _bitrateLabel,
+          onChanged: (v) => setState(() => _settings.videoBitrate = v),
+        )),
+        _row(scheme, '帧率', _dropdown<int>(
+          scheme: scheme,
+          value: _settings.framerate,
+          items: _framerates,
+          label: (v) => v == 0 ? '复制' : '$v FPS',
+          onChanged: (v) => setState(() => _settings.framerate = v),
+        )),
+        _row(scheme, '分辨率', _dropdown<String>(
+          scheme: scheme,
+          value: _resolutionLabel,
+          items: _resolutionMap.keys.toList(),
+          label: (v) => v,
+          onChanged: (v) {
+            final size = _resolutionMap[v]!;
+            setState(() {
+              _settings.resolutionWidth = size.$1;
+              _settings.resolutionHeight = size.$2;
+            });
+          },
+        )),
+        _row(scheme, '硬件加速', Switch(
+          value: _settings.hardwareAcceleration,
+          onChanged: (v) =>
+              setState(() => _settings.hardwareAcceleration = v),
+        )),
+        const SizedBox(height: 16),
+      ],
+      Text('音频设置',
+          style: TextStyle(
+            color: scheme.onSurface,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          )),
+      const SizedBox(height: 8),
+      _row(scheme, '音频编码器', _dropdown<String>(
+        scheme: scheme,
+        value: _settings.audioCodec,
+        items: _audioCodecs,
+        label: (v) => v.toUpperCase().replaceAll('_', ' '),
+        onChanged: (v) => setState(() => _settings.audioCodec = v),
+      )),
+      _row(scheme, '音频码率', _dropdown<int>(
+        scheme: scheme,
+        value: _settings.audioBitrate,
+        items: _audioBitrates,
+        label: _bitrateLabel,
+        onChanged: (v) => setState(() => _settings.audioBitrate = v),
+      )),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outline),
       ),
+      child: Column(children: children),
     );
   }
 
-  Widget _buildSettingRow(ColorScheme colorScheme, String label, Widget child) {
+  String get _resolutionLabel {
+    for (final e in _resolutionMap.entries) {
+      if (e.value.$1 == _settings.resolutionWidth &&
+          e.value.$2 == _settings.resolutionHeight) {
+        return e.key;
+      }
+    }
+    return '复制';
+  }
+
+  String _bitrateLabel(int v) {
+    if (v == ConversionSettings.bitrateCopy) return '复制';
+    if (v == ConversionSettings.bitrateVBR) return '动态(VBR)';
+    return '$v kbps';
+  }
+
+  Widget _row(ColorScheme scheme, String label, Widget child) {
+    final narrow = MediaQuery.sizeOf(context).width < 700;
+    final labelText = Text(
+      label,
+      style: TextStyle(
+        color: scheme.onSurface.withValues(alpha: 0.7),
+        fontSize: 13,
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: colorScheme.onSurface.withValues(alpha: 0.7),
-              fontSize: 13,
+      child: narrow
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                labelText,
+                const SizedBox(height: 4),
+                Align(alignment: Alignment.centerRight, child: child),
+              ],
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [Flexible(child: labelText), child],
             ),
-          ),
-          child,
-        ],
-      ),
     );
   }
 
-  String _getResolutionLabel() {
-    if (_settings.resolutionWidth == 0 || _settings.resolutionHeight == 0) {
-      return '复制';
-    } else if (_settings.resolutionWidth == 1920 && _settings.resolutionHeight == 1080) {
-      return '1080p';
-    } else if (_settings.resolutionWidth == 1280 && _settings.resolutionHeight == 720) {
-      return '720p';
-    } else if (_settings.resolutionWidth == 854 && _settings.resolutionHeight == 480) {
-      return '480p';
-    } else {
-      return '360p';
-    }
-  }
-
-  void _setResolution(String resolution) {
-    switch (resolution) {
-      case '复制':
-        _settings.resolutionWidth = 0;
-        _settings.resolutionHeight = 0;
-        break;
-      case '1080p':
-        _settings.resolutionWidth = 1920;
-        _settings.resolutionHeight = 1080;
-        break;
-      case '720p':
-        _settings.resolutionWidth = 1280;
-        _settings.resolutionHeight = 720;
-        break;
-      case '480p':
-        _settings.resolutionWidth = 854;
-        _settings.resolutionHeight = 480;
-        break;
-      case '360p':
-        _settings.resolutionWidth = 640;
-        _settings.resolutionHeight = 360;
-        break;
-    }
-  }
-
-  String _getBitrateLabel(int bitrate, bool isVideo) {
-    if (bitrate == ConversionSettings.bitrateCopy) return '复制';
-    if (bitrate == ConversionSettings.bitrateVBR) return '动态(VBR)';
-    return '$bitrate kbps';
-  }
-
-  Future<void> _generateOutputPath() async {
-    // 默认输出到用户文档目录
-    final dir = await getApplicationDocumentsDirectory();
-    setState(() {
-      _outputPath = dir.path;
-    });
-  }
-
-  Future<void> _selectOutputPath() async {
-    // 选择输出文件夹
-    // file_picker 11.0+ 使用静态方法
-    String? selectedDirectory = await FilePicker.getDirectoryPath(
-      dialogTitle: '选择输出文件夹',
-    );
-
-    if (selectedDirectory != null) {
-      setState(() {
-        _outputPath = selectedDirectory;
-      });
-    }
-  }
-
-  String _getOutputFileName() {
-    // 生成输出文件名
-    final currentFile = widget.files[_selectedFileIndex];
-    final fileName = currentFile.path.split(Platform.pathSeparator).last;
-    final nameWithoutExt = fileName.split('.').first;
-    final outputFormat = _selectedFormat ?? 'mp4';
-    return '$nameWithoutExt.$outputFormat';
-  }
-
-  String _getFullOutputPath() {
-    // 获取完整的输出文件路径
-    return '$_outputPath${Platform.pathSeparator}${_getOutputFileName()}';
-  }
-
-  Future<void> _startConversion() async {
-    if (_selectedFormat == null) {
-      developer.log(
-        '转换失败: 未选择输出格式',
-        name: 'ConverterPage',
-        level: 900, // ERROR level
-      );
-      return;
-    }
-
-    final inputFile = widget.files[_selectedFileIndex];
-    final inputPath = inputFile.path;
-    final fileName = inputPath.split(Platform.pathSeparator).last;
-
-    // 记录转换开始前的详细信息
-    developer.log(
-      '========== 开始转换 ==========',
-      name: 'ConverterPage',
-      level: 500, // INFO level
-    );
-    developer.log(
-      '输入文件: $inputPath',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '文件名: $fileName',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '文件大小: ${_getFileSize(inputFile)}',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '输出格式: $_selectedFormat',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '输出文件夹: $_outputPath',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '输出文件: ${_getOutputFileName()}',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '完整路径: ${_getFullOutputPath()}',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '硬件加速: $_currentHardwareDevice',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '视频编码器: ${_settings.videoCodec}',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '视频码率: ${_settings.videoBitrateDisplay}',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '帧率: ${_settings.framerateDisplay}',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '分辨率: ${_settings.resolutionDisplay}',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '音频编码器: ${_settings.audioCodec}',
-      name: 'ConverterPage',
-    );
-    developer.log(
-      '音频码率: ${_settings.audioBitrateDisplay}',
-      name: 'ConverterPage',
-    );
-
-    // 检查输入文件是否存在
-    if (!await inputFile.exists()) {
-      developer.log(
-        '转换失败: 输入文件不存在 - $inputPath',
-        name: 'ConverterPage',
-        level: 900,
-      );
-      _showErrorSnackBar('输入文件不存在');
-      return;
-    }
-
-    // 检查输出路径是否设置
-    if (_outputPath.isEmpty) {
-      developer.log(
-        '转换失败: 输出路径未设置',
-        name: 'ConverterPage',
-        level: 900,
-      );
-      _showErrorSnackBar('请先设置输出路径');
-      return;
-    }
-
-    setState(() {
-      _isConverting = true;
-    });
-
-    developer.log(
-      '开始执行转换任务...',
-      name: 'ConverterPage',
-    );
-
-    try {
-      final ffmpegService = FfmpegService();
-
-      developer.log(
-        '调用 FFmpeg 服务...',
-        name: 'ConverterPage',
-      );
-
-      // 调用实际的 FFmpeg 转换
-      await ffmpegService.convert(
-        inputPath,
-        _getFullOutputPath(),
-        _selectedFormat!,
-        _settings,
-        (progress) {
-          if (mounted) {
-            setState(() {
-              _fileProgress[inputPath] = progress;
-            });
-            developer.log(
-              '转换进度: ${progress.toStringAsFixed(1)}%',
-              name: 'ConverterPage',
-            );
-          }
-        },
-        _selectedHardwareId,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        _isConverting = false;
-        _fileProgress[inputPath] = 100.0;
-      });
-
-      developer.log(
-        '========== 转换完成 ==========',
-        name: 'ConverterPage',
-        level: 500,
-      );
-      developer.log(
-        '输出文件: ${_getFullOutputPath()}',
-        name: 'ConverterPage',
-      );
-
-      if (!mounted) return;
-      final colorScheme = Theme.of(context).colorScheme;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('转换完成!', style: TextStyle(color: colorScheme.onPrimary)),
-          backgroundColor: colorScheme.primary,
-        ),
-      );
-    } catch (e, stackTrace) {
-      developer.log(
-        '========== 转换失败 ==========',
-        name: 'ConverterPage',
-        level: 900,
-      );
-      developer.log(
-        '错误信息: $e',
-        name: 'ConverterPage',
-        level: 900,
-      );
-      developer.log(
-        '堆栈跟踪: $stackTrace',
-        name: 'ConverterPage',
-        level: 900,
-      );
-
-      if (!mounted) return;
-      setState(() {
-        _isConverting = false;
-      });
-      _showErrorSnackBar('转换失败: $e');
-    }
-  }
-
-  String _getFileSize(File file) {
-    try {
-      final bytes = file.lengthSync();
-      if (bytes < 1024) return '$bytes B';
-      if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-      if (bytes < 1024 * 1024 * 1024) {
-        return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-      }
-      return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-    } catch (e) {
-      return '未知';
-    }
-  }
-
-  void _showErrorSnackBar(String message) {
-    if (!mounted) return;
-    final colorScheme = Theme.of(context).colorScheme;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: TextStyle(color: colorScheme.onError)),
-        backgroundColor: colorScheme.error,
-        duration: const Duration(seconds: 5),
-      ),
+  Widget _dropdown<T>({
+    required ColorScheme scheme,
+    required T value,
+    required List<T> items,
+    required String Function(T) label,
+    required ValueChanged<T> onChanged,
+  }) {
+    return DropdownButton<T>(
+      value: value,
+      items: [
+        for (final item in items)
+          DropdownMenuItem(value: item, child: Text(label(item))),
+      ],
+      onChanged: (v) {
+        if (v != null) onChanged(v);
+      },
+      style: TextStyle(color: scheme.onSurface),
+      dropdownColor: scheme.surface,
+      underline: const SizedBox.shrink(),
     );
   }
 }
