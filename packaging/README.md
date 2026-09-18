@@ -12,5 +12,6 @@ CI 产出物（`Build Installers` workflow）：
 - iOS **不在** CI 范围内。
 - 产物在 Actions → 对应 job → Artifacts 下载。
 - 桌面/开始菜单快捷方式、RPM 桌面入口图标使用 `assets/images/logo.png`（应用内 logo）。
+- Windows MSI 的安装器元数据/快捷方式名为英文 `ZhuanzhuanMiao`（MSI 数据库默认 code page 1252 无法写入中文）；应用界面仍为中文「转转喵」。
 
 触发方式：push 到 `master` / `dev` / `feature/*`，或在 Actions 页手动 `workflow_dispatch`。

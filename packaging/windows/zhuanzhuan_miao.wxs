@@ -1,11 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- WiX v3：Flutter Windows Release → MSI（CI 中 heat 并入 ProductComponents） -->
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WiX v3: Flutter Windows Release -> MSI.
+     Installer strings are ASCII-only: Windows Installer default code page
+     is 1252 and rejects CJK in Product/Shortcut metadata. App UI stays Chinese. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product
     Id="*"
-    Name="转转喵"
-    Language="2052"
-    Codepage="65001"
+    Name="ZhuanzhuanMiao"
+    Language="1033"
+    Codepage="1252"
     Version="1.0.0"
     Manufacturer="NeuroMatrix-Lab"
     UpgradeCode="B7E2C4A1-8F3D-4E6A-9C21-5D8F0A7E6B34">
@@ -14,9 +16,9 @@
       Compressed="yes"
       InstallScope="perMachine"
       Platform="x64"
-      Description="转转喵 - 跨平台音视频格式转换工具"
+      Description="ZhuanzhuanMiao - cross-platform audio/video converter"
       Comments="GitHub Actions" />
-    <MajorUpgrade DowngradeErrorMessage="已安装更新版本，请先卸载后再安装。" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
     <Icon Id="AppIcon" SourceFile="packaging\windows\app_icon.ico" />
@@ -33,13 +35,12 @@
       <Directory Id="DesktopFolder" />
     </Directory>
 
-    <!-- 开始菜单快捷方式 -->
     <DirectoryRef Id="ApplicationProgramsFolder">
-      <Component Id="StartMenuShortcut" Guid="A1B2C3D4-E5F6-7890-ABCD-EF1234567890">
+      <Component Id="StartMenuShortcut" Guid="A1B2C4A1-8F3D-4E6A-9C21-5D8F0A7E6B34">
         <Shortcut
           Id="StartMenuShortcutLink"
-          Name="转转喵"
-          Description="跨平台音视频格式转换工具"
+          Name="ZhuanzhuanMiao"
+          Description="Cross-platform audio/video converter"
           Target="[INSTALLFOLDER]flutter_ffmpeg_converter.exe"
           WorkingDirectory="INSTALLFOLDER"
           Icon="AppIcon" />
@@ -54,13 +55,12 @@
       </Component>
     </DirectoryRef>
 
-    <!-- 桌面快捷方式 -->
     <DirectoryRef Id="DesktopFolder">
       <Component Id="DesktopShortcut" Guid="C0FFEE00-1234-5678-9ABC-DEF012345678">
         <Shortcut
           Id="DesktopShortcutLink"
-          Name="转转喵"
-          Description="跨平台音视频格式转换工具"
+          Name="ZhuanzhuanMiao"
+          Description="Cross-platform audio/video converter"
           Target="[INSTALLFOLDER]flutter_ffmpeg_converter.exe"
           WorkingDirectory="INSTALLFOLDER"
           Icon="AppIcon" />
