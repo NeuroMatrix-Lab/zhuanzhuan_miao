@@ -5,6 +5,7 @@
     Id="*"
     Name="转转喵"
     Language="2052"
+    Codepage="65001"
     Version="1.0.0"
     Manufacturer="NeuroMatrix-Lab"
     UpgradeCode="B7E2C4A1-8F3D-4E6A-9C21-5D8F0A7E6B34">
